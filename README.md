@@ -12,18 +12,20 @@ El sistema backend se encuentra desacoplado en tres capas principales dentro de 
 backend/
 └── src/
     ├── domain/                             # Capa de Dominio (Reglas de negocio puras)
-    │   ├── entities/                       # Entidades principales (Reclamo.js)
+    │   ├── entities/                       # Entidades (Reclamo.js)
     │   ├── valueObjects/                   # Objetos de Valor (EstadoReclamo.js)
-    │   └── ports/                          # Puertos/Interfaces de persistencia
+    │   └── ports/                          # Puertos / Interfaces de Dominio
+    │       ├── input/                      # Puerto de Entrada (RegistrarReclamoPort.js)
+    │       └── output/                     # Puerto de Salida (ReclamoRepositoryPort.js)
     │
     ├── application/                        # Capa de Aplicación (Casos de Uso)
-    │   ├── useCases/                       # Lógica por Historia de Usuario (RegistrarReclamoUseCase.js)
-    │   └── services/                       # Servicios de orquestación de la aplicación
+    │   ├── useCases/                       # Lógica de Negocio (RegistrarReclamoUseCase.js)
+    │   └── services/                       # Servicios (ReclamoApplicationService.js)
     │
     └── infrastructure/                     # Capa de Infraestructura (Adaptadores)
         └── adapters/
-            ├── input/                      # Adaptadores de Entrada (Express Server / REST Controllers)
-            └── output/                     # Adaptadores de Salida (Supabase Client Repository)
+            ├── input/                      # Adaptadores de Entrada (server.js)
+            └── output/                     # Adaptadores de Salida (SupabaseReclamoRepository.js)
 
 frontend/                                   # Interfaz de usuario construida en React + Vite
 main.py                                     # Módulo de Green AI (Ollama + Telemetría CodeCarbon)
