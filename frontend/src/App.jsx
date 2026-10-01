@@ -16,8 +16,9 @@ export default function App() {
     setCargando(true);
 
     try {
-      const response = await fetch('http://localhost:8000/api/reclamos', {
-        method: 'POST',
+      const API_URL = import.meta.env.VITE_API_URL || 'https://taller-de-proyectos-software.onrender.com';
+        const response = await fetch(`${API_URL}/api/reclamos`, {
+          method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
