@@ -1,4 +1,5 @@
 import os
+import dagshub
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
@@ -7,6 +8,9 @@ from supabase import create_client, Client
 from src.infrastructure.adapters.input.api_router import router
 
 load_dotenv()
+
+# Inicializar conexión automática con DagsHub MLflow
+dagshub.init(repo_owner='Marcelo-CC', repo_name='Taller-de-Proyectos-Software', mlflow=True)
 
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")

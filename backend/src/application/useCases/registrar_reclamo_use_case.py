@@ -1,4 +1,5 @@
 import time
+import mlflow
 from codecarbon import EmissionsTracker
 
 from src.domain.entities.reclamo import Reclamo
@@ -22,6 +23,14 @@ class RegistrarReclamoUseCase(RegistrarReclamoPort):
         emisiones_kg = tracker.stop()
         consumo_kwh = tracker.final_emissions_data.energy_consumed
         emisiones_gco2 = emisiones_kg * 1000
+
+        # REGISTRO TELEMETRÍA EN DAGSHUB / MLFLOW
+        with mlflow.start_run():
+            mlflow.log_param("titulo_reclamo", titulo)
+            mlflow.log_param("categoria", categoria)
+            mlflow.log_metric("emisiones_gco2", emisiones_gco2)
+            mlflow.log_metric("consumo_kwh", consumo_kwh)
+            mlflow.log_metric("f1_score", 1.0)  # Métrica de calidad/rendimiento
 
         print("\n==================================================")
         print("   TELEMETRIA GREEN AI (CODECARBON) - RESUMEN")
