@@ -10,15 +10,17 @@ from src.infrastructure.adapters.input.api_router import router
 
 load_dotenv()
 
-# Obtener token de DagsHub
+# Obtener token e inyectarlo en la configuración global de DagsHub
 DAGSHUB_TOKEN = os.getenv("MLFLOW_TRACKING_PASSWORD", "08a361eb762d8562daa67d9089d622d1e31bbc7a")
 
-# Inicializar DagsHub pasando el token explícitamente
+if DAGSHUB_TOKEN:
+    dagshub.auth.add_app_token(DAGSHUB_TOKEN)
+
+# Inicializar DagsHub MLflow sin parámetros no soportados
 dagshub.init(
     repo_owner='Marcelo-CC',
     repo_name='Taller-de-Proyectos-Software',
-    mlflow=True,
-    token=DAGSHUB_TOKEN
+    mlflow=True
 )
 
 SUPABASE_URL = os.getenv("SUPABASE_URL")
