@@ -10,13 +10,16 @@ from src.infrastructure.adapters.input.api_router import router
 
 load_dotenv()
 
-# Autenticación explícita con el token de DagsHub
-token = os.getenv("MLFLOW_TRACKING_PASSWORD", "08a361eb762d8562daa67d9089d622d1e31bbc7a")
-if token:
-    dagshub.auth.add_app_token(token)
+# Obtener token de DagsHub
+DAGSHUB_TOKEN = os.getenv("MLFLOW_TRACKING_PASSWORD", "08a361eb762d8562daa67d9089d622d1e31bbc7a")
 
-# Inicializar conexión automática con DagsHub MLflow
-dagshub.init(repo_owner='Marcelo-CC', repo_name='Taller-de-Proyectos-Software', mlflow=True)
+# Inicializar DagsHub pasando el token explícitamente
+dagshub.init(
+    repo_owner='Marcelo-CC',
+    repo_name='Taller-de-Proyectos-Software',
+    mlflow=True,
+    token=DAGSHUB_TOKEN
+)
 
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")
@@ -24,7 +27,6 @@ SUPABASE_KEY = os.getenv("SUPABASE_KEY")
 if not SUPABASE_URL or not SUPABASE_KEY:
     raise ValueError("Faltan las credenciales SUPABASE_URL o SUPABASE_KEY en el archivo .env")
 
-# Cliente Supabase compartido para los adaptadores
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 app = FastAPI(
