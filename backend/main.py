@@ -1,5 +1,6 @@
 import os
 import dagshub
+import mlflow
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
@@ -8,6 +9,11 @@ from supabase import create_client, Client
 from src.infrastructure.adapters.input.api_router import router
 
 load_dotenv()
+
+# Autenticación explícita con el token de DagsHub
+token = os.getenv("MLFLOW_TRACKING_PASSWORD", "08a361eb762d8562daa67d9089d622d1e31bbc7a")
+if token:
+    dagshub.auth.add_app_token(token)
 
 # Inicializar conexión automática con DagsHub MLflow
 dagshub.init(repo_owner='Marcelo-CC', repo_name='Taller-de-Proyectos-Software', mlflow=True)
