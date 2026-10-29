@@ -19,7 +19,7 @@ class ReclamoDTO(BaseModel):
     categoria: Optional[str] = None  # <-- CAMBIO CLAVE: Permite recibir valor nulo/ausente desde React sin arrojar 422
 
 @router.post("/api/reclamos")
-async def crear_reclamo(
+def crear_reclamo(
     dto: ReclamoDTO, 
     use_case: RegistrarReclamoUseCase = Depends(get_use_case)
 ):

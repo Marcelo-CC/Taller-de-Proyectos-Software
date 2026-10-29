@@ -1,17 +1,24 @@
 import os
 import json
-import google.generativeai as genai
+from google import genai
+from google.genai import types
 
 class GeminiAdapter:
     def __init__(self):
         api_key = os.getenv("GEMINI_API_KEY")
         if not api_key:
             raise ValueError("⚠️ GEMINI_API_KEY no está configurada en el entorno.")
-        
-        genai.configure(api_key=api_key)
+
+        # Timeout de 30 s (en ms) y un solo reintento para que el reclamo no se quede colgado
+        self.client = genai.Client(
+            api_key=api_key,
+            http_options=types.HttpOptions(
+                timeout=30_000,
+                retry_options=types.HttpRetryOptions(attempts=2)
+            )
+        )
         # gemini-1.5-flash fue retirado; el alias "latest" apunta siempre al Flash vigente
-        model_name = os.getenv("GEMINI_MODEL", "gemini-flash-latest")
-        self.model = genai.GenerativeModel(model_name)
+        self.model_name = os.getenv("GEMINI_MODEL", "gemini-flash-latest")
 
     def procesar_reclamo_con_ia(self, texto_original: str):
         if not texto_original or not texto_original.strip():
@@ -42,7 +49,11 @@ class GeminiAdapter:
         """
 
         try:
-            response = self.model.generate_content(prompt)
+            response = self.client.models.generate_content(
+                model=self.model_name,
+                contents=prompt,
+                config=types.GenerateContentConfig(response_mime_type="application/json")
+            )
             
             json_text = response.text.replace("```json", "").replace("```", "").strip()
             data = json.loads(json_text)
