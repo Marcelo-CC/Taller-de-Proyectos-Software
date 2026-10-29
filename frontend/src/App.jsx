@@ -12,11 +12,10 @@ export default function App() {
     direccion: ''
   });
 
-  // Paso 2: Datos del Reclamo
+  // Paso 2: Datos del Reclamo (Categoría eliminada, ahora la maneja la IA)
   const [formData, setFormData] = useState({
     titulo: '',
-    descripcion: '',
-    categoria: 'Vías Públicas'
+    descripcion: ''
   });
 
   const [mostrarModal, setMostrarModal] = useState(false);
@@ -37,7 +36,7 @@ export default function App() {
     e.preventDefault();
     setCargando(true);
 
-    // Concatena los datos ingresados para que el backend anonimice el texto en la Capa de Dominio
+    // Concatena los datos ingresados para que Gemini procese la anonimización e identificación
     const descripcionConsolidada = `Soy ${datosPersonales.nombre} con DNI ${datosPersonales.dni}, domiciliado en ${datosPersonales.direccion}. Detalle del problema: ${formData.descripcion}`;
 
     try {
@@ -49,8 +48,7 @@ export default function App() {
         },
         body: JSON.stringify({
           titulo: formData.titulo,
-          descripcion: descripcionConsolidada,
-          categoria: formData.categoria
+          descripcion: descripcionConsolidada
         })
       });
 
@@ -78,14 +76,12 @@ export default function App() {
     });
     setFormData({
       titulo: '',
-      descripcion: '',
-      categoria: 'Vías Públicas'
+      descripcion: ''
     });
   };
 
   return (
     <div className="app-container">
-      {/* Contenedor principal */}
       <div className="form-container">
         <h1>Municipalidad Provincial de Huancayo</h1>
         <h2>Gestión de Reclamos Vecinales (Green AI)</h2>
@@ -178,22 +174,6 @@ export default function App() {
               />
             </div>
 
-            {/* Categoría */}
-            <div className="form-group">
-              <label>Categoría estimada:</label>
-              <select
-                value={formData.categoria}
-                onChange={(e) =>
-                  setFormData({ ...formData, categoria: e.target.value })
-                }
-              >
-                <option value="Vías Públicas">Vías Públicas / Obras</option>
-                <option value="Limpieza Pública">Limpieza Pública y Basura</option>
-                <option value="Parques y Jardines">Parques y Jardines</option>
-                <option value="Alumbrado">Alumbrado e Infraestructura</option>
-              </select>
-            </div>
-
             {/* Botones de navegación */}
             <div style={{ display: 'flex', gap: '10px', marginTop: '1rem' }}>
               <button
@@ -238,7 +218,7 @@ export default function App() {
               Reclamo registrado con éxito en el sistema municipal y guardado en Supabase.
             </p>
             <p style={{ fontSize: '0.8rem', color: '#4CAF50', margin: '0.5rem 0 1.2rem 0' }}>
-              🔒 Datos de identificación personal anonimizados en la Base de Datos.
+              🔒 Datos personales anonimizados y categorizados automáticamente mediante Gemini AI.
             </p>
             <button onClick={handleCerrarModal} className="btn-modal">
               Aceptar
