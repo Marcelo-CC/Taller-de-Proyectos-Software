@@ -10,23 +10,29 @@ El sistema backend se encuentra desacoplado en tres capas principales dentro de 
 
 ```text
 backend/
-└── src/
-    ├── domain/                             # Capa de Dominio (Reglas de negocio puras)
-    │   ├── entities/                       # Entidades (Reclamo.js)
-    │   ├── valueObjects/                   # Objetos de Valor (EstadoReclamo.js)
-    │   └── ports/                          # Puertos / Interfaces de Dominio
-    │       ├── input/                      # Puerto de Entrada (RegistrarReclamoPort.js)
-    │       └── output/                     # Puerto de Salida (ReclamoRepositoryPort.js)
-    │
-    ├── application/                        # Capa de Aplicación (Casos de Uso)
-    │   ├── useCases/                       # Lógica de Negocio (RegistrarReclamoUseCase.js)
-    │   └── services/                       # Servicios (ReclamoApplicationService.js)
-    │
-    └── infrastructure/                     # Capa de Infraestructura (Adaptadores)
-        └── adapters/
-            ├── input/                      # Adaptadores de Entrada (server.js)
-            └── output/                     # Adaptadores de Salida (SupabaseReclamoRepository.js)
-
-frontend/                                   # Interfaz de usuario construida en React + Vite
-main.py                                     # Módulo de Green AI (Ollama + Telemetría CodeCarbon)
-emissions.csv                               # Registro de impacto ambiental y huella de carbono
+├── src/
+│   ├── application/
+│   │   └── useCases/
+│   │       └── registrar_reclamo_use_case.py       # Casos de Uso (Anonimización PII + Green AI)
+│   ├── domain/
+│   │   ├── entities/
+│   │   │   └── reclamo.py                          # Entidad Reclamo
+│   │   ├── ports/
+│   │   │   ├── input/
+│   │   │   │   └── registrar_reclamo_port.py       # Puerto de Entrada
+│   │   │   └── output/
+│   │   │       └── reclamo_repository_port.py     # Puerto de Salida
+│   │   └── valueObjects/
+│   │       └── estado_reclamo.py                   # Objetos de Valor
+│   └── infrastructure/
+│       └── adapters/
+│           ├── input/
+│           │   └── api_router.py                   # Adaptador Entrada (Endpoints FastAPI)
+│           └── output/
+│               └── supabase_reclamo_repository.py  # Adaptador Salida (Persistencia Supabase)
+├── .env                                            # Variables de Entorno (API Keys)
+├── emissions.csv                                   # Registro de Huella de Carbono
+├── main.py                                         # Punto de Entrada FastAPI + DagsHub MLflow
+├── package-lock.json
+├── package.json
+└── requirements.txt                                # Dependencias de Python
