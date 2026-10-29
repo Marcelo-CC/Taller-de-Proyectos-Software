@@ -2,7 +2,6 @@ import os
 import json
 import google.generativeai as genai
 
-
 class GeminiAdapter:
     def __init__(self):
         api_key = os.getenv("GEMINI_API_KEY")
@@ -10,7 +9,7 @@ class GeminiAdapter:
             raise ValueError("⚠️ GEMINI_API_KEY no está configurada en el entorno.")
         
         genai.configure(api_key=api_key)
-        # Nombre del modelo en el SDK de Google Generative AI
+        # Se especifica el identificador estándar del modelo en el SDK oficial
         self.model = genai.GenerativeModel('gemini-1.5-flash')
 
     def procesar_reclamo_con_ia(self, texto_original: str):
@@ -44,7 +43,6 @@ class GeminiAdapter:
         try:
             response = self.model.generate_content(prompt)
             
-            # Limpiar delimores markdown si los incluye
             json_text = response.text.replace("```json", "").replace("```", "").strip()
             data = json.loads(json_text)
 
