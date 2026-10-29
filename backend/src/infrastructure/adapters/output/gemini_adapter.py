@@ -9,8 +9,9 @@ class GeminiAdapter:
             raise ValueError("⚠️ GEMINI_API_KEY no está configurada en el entorno.")
         
         genai.configure(api_key=api_key)
-        # Se especifica el identificador estándar del modelo en el SDK oficial
-        self.model = genai.GenerativeModel('gemini-1.5-flash')
+        # gemini-1.5-flash fue retirado; el alias "latest" apunta siempre al Flash vigente
+        model_name = os.getenv("GEMINI_MODEL", "gemini-flash-latest")
+        self.model = genai.GenerativeModel(model_name)
 
     def procesar_reclamo_con_ia(self, texto_original: str):
         if not texto_original or not texto_original.strip():
