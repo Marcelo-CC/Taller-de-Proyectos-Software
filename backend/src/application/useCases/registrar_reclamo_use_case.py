@@ -43,6 +43,19 @@ class RegistrarReclamoUseCase(RegistrarReclamoPort):
         consumo_kwh = tracker.final_emissions_data.energy_consumed
         emisiones_gco2 = emisiones_kg * 1000
 
+        # Resumen en consola; si algo falla al imprimir, no interrumpe el registro
+        try:
+            print("\n==================================================")
+            print("   TELEMETRIA GREEN AI (CODECARBON) - RESUMEN")
+            print("==================================================")
+            print(f"Texto Anonimizado           : {str(descripcion_protegida)[:60]}...")
+            print(f"Emisiones de CO2e estimadas : {emisiones_kg:.8f} kg ({emisiones_gco2:.6f} gCO2e)")
+            print(f"Consumo energético          : {consumo_kwh:.8f} kWh")
+            print("Cumplimiento Criterio ICACIT: AG-C08 (Sostenibilidad)")
+            print("==================================================\n", flush=True)
+        except Exception as e:
+            print(f"⚠️ No se pudo imprimir el resumen de telemetría: {e}")
+
         # 5. REGISTRO MLOPS EN MLFLOW
         with mlflow.start_run():
             mlflow.log_param("titulo_reclamo", titulo_protegido)
