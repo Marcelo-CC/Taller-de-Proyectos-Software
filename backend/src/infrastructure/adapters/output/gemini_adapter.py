@@ -5,21 +5,15 @@ import google.generativeai as genai
 
 class GeminiAdapter:
     def __init__(self):
-        # 1. Obtener la API Key desde las variables de entorno de Render
         api_key = os.getenv("GEMINI_API_KEY")
         if not api_key:
             raise ValueError("⚠️ GEMINI_API_KEY no está configurada en el entorno.")
         
         genai.configure(api_key=api_key)
-        # Usamos el modelo 1.5 Flash por su alta velocidad y costo $0.00 USD
+        # Nombre del modelo en el SDK de Google Generative AI
         self.model = genai.GenerativeModel('gemini-1.5-flash')
 
     def procesar_reclamo_con_ia(self, texto_original: str):
-        """
-        Delega a la IA de Gemini:
-        1. La anonimización de nombres, DNI, direcciones o teléfonos.
-        2. La clasificación automática en una categoría oficial municipal.
-        """
         if not texto_original or not texto_original.strip():
             return texto_original, "Vías Públicas"
 
@@ -50,17 +44,15 @@ class GeminiAdapter:
         try:
             response = self.model.generate_content(prompt)
             
-            # Limpiar posibles delimitadores de formato markdown que devuelva el modelo
+            # Limpiar delimores markdown si los incluye
             json_text = response.text.replace("```json", "").replace("```", "").strip()
             data = json.loads(json_text)
 
             texto_anonimizado = data.get("texto_anonimizado", texto_original)
             categoria = data.get("categoria", "Vías Públicas")
 
-            # Validar que la categoría sea una de las 4 permitidas
             categorias_validas = ["Vías Públicas", "Limpieza Pública", "Parques y Jardines", "Alumbrado"]
             if categoria not in categorias_validas:
-                # Fallback por coincidencia parcial si Gemini varía el texto
                 for cat in categorias_validas:
                     if cat.lower() in categoria.lower():
                         categoria = cat
@@ -72,5 +64,4 @@ class GeminiAdapter:
 
         except Exception as e:
             print(f"⚠️ Error al procesar reclamo con Gemini API: {e}")
-            # Retorno de emergencia si la API presenta interrupciones
             return texto_original, "Vías Públicas"
