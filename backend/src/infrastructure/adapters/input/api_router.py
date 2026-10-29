@@ -1,3 +1,4 @@
+from typing import Optional
 from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel
 
@@ -15,7 +16,7 @@ def get_use_case() -> RegistrarReclamoUseCase:
 class ReclamoDTO(BaseModel):
     titulo: str
     descripcion: str
-    categoria: str
+    categoria: Optional[str] = None  # <-- CAMBIO CLAVE: Permite recibir valor nulo/ausente desde React sin arrojar 422
 
 @router.post("/api/reclamos")
 async def crear_reclamo(
@@ -32,6 +33,7 @@ async def crear_reclamo(
             "status": "success",
             "message": "Reclamo registrado exitosamente.",
             "data": resultado["db_data"],
+            "categoria_asignada": resultado.get("categoria_detectada"),
             "telemetria_green_ai": {
                 "emisiones_gco2": round(resultado["emisiones_gco2"], 6),
                 "consumo_kwh": round(resultado["consumo_kwh"], 8)
