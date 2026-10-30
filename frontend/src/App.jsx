@@ -15,6 +15,7 @@ export default function App() {
   // Paso 2: Datos del Reclamo (Categoría eliminada, ahora la maneja la IA)
   const [formData, setFormData] = useState({
     titulo: '',
+    ubicacion: '',
     descripcion: ''
   });
 
@@ -24,8 +25,12 @@ export default function App() {
   // Avanzar del Paso 1 al Paso 2
   const handleSiguiente = (e) => {
     e.preventDefault();
-    if (!datosPersonales.dni || !datosPersonales.nombre) {
-      alert('Por favor complete su DNI y Nombre antes de continuar.');
+    if (!/^\d{8}$/.test(datosPersonales.dni)) {
+      alert('El DNI debe tener exactamente 8 dígitos numéricos.');
+      return;
+    }
+    if (!datosPersonales.nombre.trim() || !datosPersonales.direccion.trim()) {
+      alert('Por favor complete su Nombre y Dirección antes de continuar.');
       return;
     }
     setPaso(2);
@@ -37,7 +42,7 @@ export default function App() {
     setCargando(true);
 
     // Concatena los datos ingresados para que Gemini procese la anonimización e identificación
-    const descripcionConsolidada = `Soy ${datosPersonales.nombre} con DNI ${datosPersonales.dni}, domiciliado en ${datosPersonales.direccion}. Detalle del problema: ${formData.descripcion}`;
+    const descripcionConsolidada = `Soy ${datosPersonales.nombre} con DNI ${datosPersonales.dni}, domiciliado en ${datosPersonales.direccion}. Ubicación del problema: ${formData.ubicacion}. Detalle del problema: ${formData.descripcion}`;
 
     try {
       const API_URL = import.meta.env.VITE_API_URL || 'https://taller-de-proyectos-software.onrender.com';
@@ -76,6 +81,7 @@ export default function App() {
     });
     setFormData({
       titulo: '',
+      ubicacion: '',
       descripcion: ''
     });
   };
@@ -93,14 +99,34 @@ export default function App() {
               Paso 1: Datos del Ciudadano
             </h3>
 
+            {/* Aviso de privacidad */}
+            <p
+              style={{
+                color: '#ff6b6b',
+                backgroundColor: 'rgba(255, 107, 107, 0.1)',
+                border: '1px solid #ff6b6b',
+                borderRadius: '4px',
+                padding: '0.6rem',
+                fontSize: '0.85rem',
+                margin: '0 0 1.2rem 0'
+              }}
+            >
+              🔒 Sus datos personales son confidenciales: su DNI, nombre y domicilio se anonimizan
+              automáticamente y no se guardan de forma visible en el sistema.
+            </p>
+
             <div className="form-group">
               <label>DNI del Ciudadano:</label>
               <input
                 type="text"
+                inputMode="numeric"
                 maxLength="8"
+                pattern="\d{8}"
+                title="El DNI debe tener exactamente 8 dígitos numéricos"
                 value={datosPersonales.dni}
                 onChange={(e) =>
-                  setDatosPersonales({ ...datosPersonales, dni: e.target.value })
+                  // Solo números, máximo 8
+                  setDatosPersonales({ ...datosPersonales, dni: e.target.value.replace(/\D/g, '').slice(0, 8) })
                 }
                 placeholder="Ingrese DNI (8 dígitos)"
                 required
@@ -113,7 +139,11 @@ export default function App() {
                 type="text"
                 value={datosPersonales.nombre}
                 onChange={(e) =>
-                  setDatosPersonales({ ...datosPersonales, nombre: e.target.value })
+                  // Solo letras (con tildes y ñ), espacios, apóstrofo y guion
+                  setDatosPersonales({
+                    ...datosPersonales,
+                    nombre: e.target.value.replace(/[^A-Za-zÁÉÍÓÚÜÑáéíóúüñ\s'-]/g, '')
+                  })
                 }
                 placeholder="Ej. Juan Pérez"
                 required
@@ -156,6 +186,20 @@ export default function App() {
                   setFormData({ ...formData, titulo: e.target.value })
                 }
                 placeholder="Ingrese el título del reclamo"
+                required
+              />
+            </div>
+
+            {/* Ubicación del problema */}
+            <div className="form-group">
+              <label>Dirección Exacta del Lugar:</label>
+              <input
+                type="text"
+                value={formData.ubicacion}
+                onChange={(e) =>
+                  setFormData({ ...formData, ubicacion: e.target.value })
+                }
+                placeholder="Ej. Jr. Arequipa cuadra 3, esquina con Av. Giráldez"
                 required
               />
             </div>

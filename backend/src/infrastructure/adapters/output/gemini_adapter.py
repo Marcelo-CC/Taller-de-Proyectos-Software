@@ -52,6 +52,8 @@ class GeminiAdapter:
            - Reemplaza DNI o números de documento por [DNI_PROTEGIDO].
            - Reemplaza teléfonos, correos o referencias exactas de domicilio personal por [DATOS_PROTEGIDOS].
            - Conserva intacta la explicación del problema vecinal.
+           - La "Ubicación del problema" es un lugar público (calle, esquina, parque): NO la enmascares,
+             solo el domicilio personal del ciudadano.
 
         2. CORRECCIÓN DE REDACCIÓN: Corrige la ortografía, tildes, puntuación y gramática del título y la descripción
            para que se lean claros y formales.
