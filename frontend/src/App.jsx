@@ -41,9 +41,6 @@ export default function App() {
     e.preventDefault();
     setCargando(true);
 
-    // Concatena los datos ingresados para que Gemini procese la anonimización e identificación
-    const descripcionConsolidada = `Soy ${datosPersonales.nombre} con DNI ${datosPersonales.dni}, domiciliado en ${datosPersonales.direccion}. Ubicación del problema: ${formData.ubicacion}. Detalle del problema: ${formData.descripcion}`;
-
     try {
       const API_URL = import.meta.env.VITE_API_URL || 'https://taller-de-proyectos-software.onrender.com';
       const response = await fetch(`${API_URL}/api/reclamos`, {
@@ -51,9 +48,14 @@ export default function App() {
         headers: {
           'Content-Type': 'application/json'
         },
+        // Campos separados: el backend enmascara los datos personales sin enviarlos a Gemini
         body: JSON.stringify({
           titulo: formData.titulo,
-          descripcion: descripcionConsolidada
+          ubicacion: formData.ubicacion,
+          descripcion: formData.descripcion,
+          dni: datosPersonales.dni,
+          nombre: datosPersonales.nombre,
+          direccion: datosPersonales.direccion
         })
       });
 

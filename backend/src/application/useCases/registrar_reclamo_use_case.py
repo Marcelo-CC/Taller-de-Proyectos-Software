@@ -1,3 +1,4 @@
+import re
 import time
 import mlflow
 from codecarbon import EmissionsTracker
@@ -9,17 +10,43 @@ from src.infrastructure.adapters.output.gemini_adapter import GeminiAdapter
 
 
 class RegistrarReclamoUseCase(RegistrarReclamoPort):
+    @staticmethod
+    def _enmascarar(texto: str, datos_personales) -> str:
+        texto = texto or ""
+        for valor, marcador in datos_personales:
+            if valor and valor.strip():
+                texto = re.sub(re.escape(valor.strip()), marcador, texto, flags=re.IGNORECASE)
+        return texto
+
     def __init__(self, repository: ReclamoRepositoryPort, gemini_adapter: GeminiAdapter = None):
         self.repository = repository
         self.gemini_adapter = gemini_adapter or GeminiAdapter()
 
-    def ejecutar(self, titulo: str, descripcion: str, categoria: str = None):
-        
-        # 1. LA IA (GEMINI) HACE LA ANONIMIZACIÓN Y CLASIFICACIÓN
-        # Una sola llamada para título y descripción (la mitad de tiempo y de consumo)
-        titulo_protegido, descripcion_protegida, categoria_ia = self.gemini_adapter.procesar_reclamo_con_ia(
-            titulo, descripcion
+    def ejecutar(self, titulo: str, descripcion: str, categoria: str = None,
+                 dni: str = None, nombre: str = None, direccion: str = None, ubicacion: str = None):
+
+        # 1. ANONIMIZACIÓN DETERMINÍSTICA: los datos personales del formulario nunca se envían a Gemini.
+        #    Si el vecino los repite en el texto, también se enmascaran aquí.
+        datos_personales = [(dni, "[DNI_PROTEGIDO]"), (nombre, "[CIUDADANO_ANÓNIMO]"), (direccion, "[DATOS_PROTEGIDOS]")]
+        titulo = self._enmascarar(titulo, datos_personales)
+        descripcion = self._enmascarar(descripcion, datos_personales)
+        ubicacion = self._enmascarar(ubicacion, datos_personales)
+
+        # 2. LA IA (GEMINI) CORRIGE, ENMASCARA LO QUE QUEDE Y CLASIFICA, en una sola llamada
+        titulo_protegido, ubicacion_corregida, detalle, categoria_ia = self.gemini_adapter.procesar_reclamo_con_ia(
+            titulo, descripcion, ubicacion
         )
+
+        # Texto final con formato fijo; los datos personales siempre como marcadores
+        if any([dni, nombre, direccion]):
+            partes = ["Soy [CIUDADANO_ANÓNIMO] con DNI [DNI_PROTEGIDO], domiciliado en [DATOS_PROTEGIDOS]."]
+            if ubicacion_corregida:
+                partes.append(f"Ubicación del problema: {ubicacion_corregida.rstrip('.')}.")
+            partes.append(f"Detalle del problema: {detalle}")
+            descripcion_protegida = " ".join(partes)
+        else:
+            # Clientes antiguos que envían todo en la descripción
+            descripcion_protegida = detalle
 
         # Si el cliente no mandó categoría, usamos la que detectó la IA
         categoria_final = categoria if (categoria and categoria != "Vías Públicas") else categoria_ia

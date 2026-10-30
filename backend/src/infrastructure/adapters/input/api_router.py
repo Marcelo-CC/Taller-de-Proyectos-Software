@@ -17,6 +17,11 @@ class ReclamoDTO(BaseModel):
     titulo: str
     descripcion: str
     categoria: Optional[str] = None  # <-- CAMBIO CLAVE: Permite recibir valor nulo/ausente desde React sin arrojar 422
+    # Datos del ciudadano: se enmascaran en el backend y nunca se envían a Gemini ni se guardan
+    dni: Optional[str] = None
+    nombre: Optional[str] = None
+    direccion: Optional[str] = None
+    ubicacion: Optional[str] = None
 
 @router.post("/api/reclamos")
 def crear_reclamo(
@@ -27,7 +32,11 @@ def crear_reclamo(
         resultado = use_case.ejecutar(
             titulo=dto.titulo,
             descripcion=dto.descripcion,
-            categoria=dto.categoria
+            categoria=dto.categoria,
+            dni=dto.dni,
+            nombre=dto.nombre,
+            direccion=dto.direccion,
+            ubicacion=dto.ubicacion
         )
         return {
             "status": "success",

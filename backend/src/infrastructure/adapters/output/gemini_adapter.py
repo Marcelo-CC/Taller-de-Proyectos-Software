@@ -34,31 +34,33 @@ class GeminiAdapter:
             os.getenv("GEMINI_MODEL_RESPALDO", "gemini-flash-latest"),
         ]
 
-    def procesar_reclamo_con_ia(self, titulo: str, descripcion: str):
-        """Anonimiza título y descripción y clasifica el reclamo en una sola llamada a Gemini.
-        Devuelve (titulo_anonimizado, descripcion_anonimizada, categoria)."""
-        titulo = titulo or ""
-        descripcion = descripcion or ""
+    def procesar_reclamo_con_ia(self, titulo: str, descripcion: str, ubicacion: str = ""):
+        """Anonimiza, corrige y clasifica el reclamo en una sola llamada a Gemini.
+        Los datos personales del formulario (DNI, nombre, domicilio) NO llegan aquí.
+        Devuelve (titulo, ubicacion, descripcion, categoria)."""
+        # DNI, teléfonos y correos se enmascaran antes de salir hacia Gemini
+        titulo = self._anonimizar_local(titulo or "")
+        descripcion = self._anonimizar_local(descripcion or "")
+        ubicacion = self._anonimizar_local(ubicacion or "")
         if not titulo.strip() and not descripcion.strip():
-            return titulo, descripcion, "Vías Públicas"
+            return titulo, ubicacion, descripcion, "Vías Públicas"
 
         prompt = f"""
         Eres un asistente de IA encargado del triaje en la Mesa de Partes de la Municipalidad Provincial de Huancayo.
 
         Tu tarea es procesar el siguiente reclamo vecinal realizando tres acciones:
 
-        1. ANONIMIZACIÓN: Reescribe el título y la descripción identificando y enmascarando cualquier dato personal:
+        1. ANONIMIZACIÓN: En el título y la descripción, enmascara cualquier dato personal que aparezca:
            - Reemplaza nombres o apellidos de personas por [CIUDADANO_ANÓNIMO].
            - Reemplaza DNI o números de documento por [DNI_PROTEGIDO].
            - Reemplaza teléfonos, correos o referencias exactas de domicilio personal por [DATOS_PROTEGIDOS].
-           - Conserva intacta la explicación del problema vecinal.
-           - La "Ubicación del problema" es un lugar público (calle, esquina, parque): NO la enmascares,
-             solo el domicilio personal del ciudadano.
+           - La "ubicacion" es el lugar público del problema (calle, esquina, parque): NO la enmascares.
 
-        2. CORRECCIÓN DE REDACCIÓN: Corrige la ortografía, tildes, puntuación y gramática del título y la descripción
-           para que se lean claros y formales.
+        2. CORRECCIÓN DE REDACCIÓN: Corrige la ortografía, tildes, puntuación y gramática del título,
+           la ubicación y la descripción.
+           - Mantén la persona gramatical original (si el vecino escribe en primera persona, se queda así).
            - NO cambies el significado, NO agregues hechos nuevos y NO elimines detalles del problema
-             (lugares públicos, calles, fechas, duración, etc.).
+             (lugares, calles, fechas, duración, etc.).
            - Los nombres de calles y avenidas se conservan, solo corrige su escritura (ej. "jr wayra" -> "Jr. Wayra").
 
         3. CLASIFICACIÓN: Asigna el reclamo a EXACTAMENTE UNA de las siguientes 4 categorías oficiales:
@@ -68,10 +70,10 @@ class GeminiAdapter:
            - Alumbrado
 
         Reclamo a procesar:
-        {json.dumps({"titulo": titulo, "descripcion": descripcion}, ensure_ascii=False)}
+        {json.dumps({"titulo": titulo, "ubicacion": ubicacion, "descripcion": descripcion}, ensure_ascii=False)}
 
         RESPONDE ÚNICAMENTE EN FORMATO JSON ESTRICTO (sin bloques markdown tipo ```json):
-        {{"titulo_anonimizado": "...", "descripcion_anonimizada": "...", "categoria": "Nombre de la Categoría"}}
+        {{"titulo": "...", "ubicacion": "...", "descripcion": "...", "categoria": "Nombre de la Categoría"}}
         """
 
         for modelo in self.modelos:
@@ -85,8 +87,9 @@ class GeminiAdapter:
                 json_text = response.text.replace("```json", "").replace("```", "").strip()
                 data = json.loads(json_text)
 
-                titulo_anonimizado = data.get("titulo_anonimizado") or titulo
-                descripcion_anonimizada = data.get("descripcion_anonimizada") or descripcion
+                titulo_ia = data.get("titulo") or titulo
+                ubicacion_ia = data.get("ubicacion") or ubicacion
+                descripcion_ia = data.get("descripcion") or descripcion
                 categoria = data.get("categoria", "Vías Públicas")
 
                 if categoria not in CATEGORIAS_VALIDAS:
@@ -98,18 +101,22 @@ class GeminiAdapter:
                         categoria = "Vías Públicas"
 
                 # Segunda capa: por si la IA dejó algún DNI, teléfono o correo sin enmascarar
-                return (self._anonimizar_local(titulo_anonimizado),
-                        self._anonimizar_local(descripcion_anonimizada),
-                        categoria)
+                return (self._limpiar(titulo_ia), self._limpiar(ubicacion_ia),
+                        self._limpiar(descripcion_ia), categoria)
 
             except Exception as e:
                 print(f"⚠️ Error al procesar reclamo con Gemini API ({modelo}): {e}", flush=True)
 
         # Ningún modelo respondió: nunca se guardan datos personales sin proteger
         print("⚠️ Gemini no disponible. Se aplica anonimización y clasificación local.", flush=True)
-        return (self._anonimizar_local(titulo),
-                self._anonimizar_local(descripcion),
-                self._clasificar_local(f"{titulo} {descripcion}"))
+        return (self._limpiar(titulo), self._limpiar(ubicacion), self._limpiar(descripcion),
+                self._clasificar_local(f"{titulo} {ubicacion} {descripcion}"))
+
+    @classmethod
+    def _limpiar(cls, texto: str) -> str:
+        # Enmascarado local + mayúscula inicial en el texto y en sus secciones
+        texto = cls._capitalizar_secciones(cls._anonimizar_local(texto.strip()))
+        return texto[:1].upper() + texto[1:]
 
     @staticmethod
     def _anonimizar_local(texto: str) -> str:
@@ -123,6 +130,12 @@ class GeminiAdapter:
         texto = re.sub(rf"(?i:\b(domiciliad[oa] en|vivo en|mi casa (?:queda |está |esta )?en)\s+){direccion}",
                        r"\1 [DATOS_PROTEGIDOS]", texto)
         return texto
+
+    @staticmethod
+    def _capitalizar_secciones(texto: str) -> str:
+        # Mayúscula inicial después de "Ubicación del problema:" y "Detalle del problema:"
+        return re.sub(r"((?:Ubicación|Ubicacion|Detalle) del problema:\s*)(\w)",
+                      lambda m: m.group(1) + m.group(2).upper(), texto, flags=re.IGNORECASE)
 
     @staticmethod
     def _clasificar_local(texto: str) -> str:
