@@ -19,31 +19,35 @@ class GeminiAdapter:
         if not api_key:
             raise ValueError("⚠️ GEMINI_API_KEY no está configurada en el entorno.")
 
-        # Timeout de 30 s (en ms) y un solo reintento para que el reclamo no se quede colgado
+        # Timeout de 20 s (en ms) y sin reintentos: si un modelo falla se pasa al siguiente
         self.client = genai.Client(
             api_key=api_key,
             http_options=types.HttpOptions(
-                timeout=30_000,
-                retry_options=types.HttpRetryOptions(attempts=2)
+                timeout=20_000,
+                retry_options=types.HttpRetryOptions(attempts=1)
             )
         )
-        # gemini-1.5-flash fue retirado; el alias "latest" apunta siempre al Flash vigente.
-        # Si el modelo principal está saturado (503/504) se intenta con el de respaldo.
+        # Primero el modelo lite: más rápido y con menor consumo energético (Green AI).
+        # Si está saturado (503/504) se intenta con el Flash completo.
         self.modelos = [
-            os.getenv("GEMINI_MODEL", "gemini-flash-latest"),
-            os.getenv("GEMINI_MODEL_RESPALDO", "gemini-flash-lite-latest"),
+            os.getenv("GEMINI_MODEL", "gemini-flash-lite-latest"),
+            os.getenv("GEMINI_MODEL_RESPALDO", "gemini-flash-latest"),
         ]
 
-    def procesar_reclamo_con_ia(self, texto_original: str):
-        if not texto_original or not texto_original.strip():
-            return texto_original, "Vías Públicas"
+    def procesar_reclamo_con_ia(self, titulo: str, descripcion: str):
+        """Anonimiza título y descripción y clasifica el reclamo en una sola llamada a Gemini.
+        Devuelve (titulo_anonimizado, descripcion_anonimizada, categoria)."""
+        titulo = titulo or ""
+        descripcion = descripcion or ""
+        if not titulo.strip() and not descripcion.strip():
+            return titulo, descripcion, "Vías Públicas"
 
         prompt = f"""
         Eres un asistente de IA encargado del triaje en la Mesa de Partes de la Municipalidad Provincial de Huancayo.
 
         Tu tarea es procesar el siguiente reclamo vecinal realizando dos acciones:
 
-        1. ANONIMIZACIÓN: Reescribe el texto identificando y enmascarando cualquier dato personal:
+        1. ANONIMIZACIÓN: Reescribe el título y la descripción identificando y enmascarando cualquier dato personal:
            - Reemplaza nombres o apellidos de personas por [CIUDADANO_ANÓNIMO].
            - Reemplaza DNI o números de documento por [DNI_PROTEGIDO].
            - Reemplaza teléfonos, correos o referencias exactas de domicilio personal por [DATOS_PROTEGIDOS].
@@ -55,11 +59,11 @@ class GeminiAdapter:
            - Parques y Jardines
            - Alumbrado
 
-        Texto original a procesar:
-        "{texto_original}"
+        Reclamo a procesar:
+        {json.dumps({"titulo": titulo, "descripcion": descripcion}, ensure_ascii=False)}
 
         RESPONDE ÚNICAMENTE EN FORMATO JSON ESTRICTO (sin bloques markdown tipo ```json):
-        {{"texto_anonimizado": "texto procesado aquí", "categoria": "Nombre de la Categoría"}}
+        {{"titulo_anonimizado": "...", "descripcion_anonimizada": "...", "categoria": "Nombre de la Categoría"}}
         """
 
         for modelo in self.modelos:
@@ -73,7 +77,8 @@ class GeminiAdapter:
                 json_text = response.text.replace("```json", "").replace("```", "").strip()
                 data = json.loads(json_text)
 
-                texto_anonimizado = data.get("texto_anonimizado") or texto_original
+                titulo_anonimizado = data.get("titulo_anonimizado") or titulo
+                descripcion_anonimizada = data.get("descripcion_anonimizada") or descripcion
                 categoria = data.get("categoria", "Vías Públicas")
 
                 if categoria not in CATEGORIAS_VALIDAS:
@@ -85,14 +90,18 @@ class GeminiAdapter:
                         categoria = "Vías Públicas"
 
                 # Segunda capa: por si la IA dejó algún DNI, teléfono o correo sin enmascarar
-                return self._anonimizar_local(texto_anonimizado), categoria
+                return (self._anonimizar_local(titulo_anonimizado),
+                        self._anonimizar_local(descripcion_anonimizada),
+                        categoria)
 
             except Exception as e:
                 print(f"⚠️ Error al procesar reclamo con Gemini API ({modelo}): {e}", flush=True)
 
         # Ningún modelo respondió: nunca se guardan datos personales sin proteger
         print("⚠️ Gemini no disponible. Se aplica anonimización y clasificación local.", flush=True)
-        return self._anonimizar_local(texto_original), self._clasificar_local(texto_original)
+        return (self._anonimizar_local(titulo),
+                self._anonimizar_local(descripcion),
+                self._clasificar_local(f"{titulo} {descripcion}"))
 
     @staticmethod
     def _anonimizar_local(texto: str) -> str:

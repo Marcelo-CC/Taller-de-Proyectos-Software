@@ -16,8 +16,10 @@ class RegistrarReclamoUseCase(RegistrarReclamoPort):
     def ejecutar(self, titulo: str, descripcion: str, categoria: str = None):
         
         # 1. LA IA (GEMINI) HACE LA ANONIMIZACIÓN Y CLASIFICACIÓN
-        descripcion_protegida, categoria_ia = self.gemini_adapter.procesar_reclamo_con_ia(descripcion)
-        titulo_protegido, _ = self.gemini_adapter.procesar_reclamo_con_ia(titulo)
+        # Una sola llamada para título y descripción (la mitad de tiempo y de consumo)
+        titulo_protegido, descripcion_protegida, categoria_ia = self.gemini_adapter.procesar_reclamo_con_ia(
+            titulo, descripcion
+        )
 
         # Si el cliente no mandó categoría, usamos la que detectó la IA
         categoria_final = categoria if (categoria and categoria != "Vías Públicas") else categoria_ia
