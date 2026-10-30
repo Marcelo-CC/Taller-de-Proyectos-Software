@@ -45,7 +45,7 @@ class GeminiAdapter:
         prompt = f"""
         Eres un asistente de IA encargado del triaje en la Mesa de Partes de la Municipalidad Provincial de Huancayo.
 
-        Tu tarea es procesar el siguiente reclamo vecinal realizando dos acciones:
+        Tu tarea es procesar el siguiente reclamo vecinal realizando tres acciones:
 
         1. ANONIMIZACIÓN: Reescribe el título y la descripción identificando y enmascarando cualquier dato personal:
            - Reemplaza nombres o apellidos de personas por [CIUDADANO_ANÓNIMO].
@@ -53,7 +53,13 @@ class GeminiAdapter:
            - Reemplaza teléfonos, correos o referencias exactas de domicilio personal por [DATOS_PROTEGIDOS].
            - Conserva intacta la explicación del problema vecinal.
 
-        2. CLASIFICACIÓN: Asigna el reclamo a EXACTAMENTE UNA de las siguientes 4 categorías oficiales:
+        2. CORRECCIÓN DE REDACCIÓN: Corrige la ortografía, tildes, puntuación y gramática del título y la descripción
+           para que se lean claros y formales.
+           - NO cambies el significado, NO agregues hechos nuevos y NO elimines detalles del problema
+             (lugares públicos, calles, fechas, duración, etc.).
+           - Los nombres de calles y avenidas se conservan, solo corrige su escritura (ej. "jr wayra" -> "Jr. Wayra").
+
+        3. CLASIFICACIÓN: Asigna el reclamo a EXACTAMENTE UNA de las siguientes 4 categorías oficiales:
            - Vías Públicas
            - Limpieza Pública
            - Parques y Jardines
