@@ -1,10 +1,4 @@
-# Sistema de Gestión de Reclamos - Municipalidad Provincial de Huancayo
-
-Proyecto correspondiente a la **Unidad II (S6)** para la Municipalidad Provincial de Huancayo. La solución implementa un prototipo funcional (PMV) con **Arquitectura Hexagonal (Puertos y Adaptadores)**, persistencia en la nube mediante Supabase e integración con Inteligencia Artificial para el procesamiento de reclamos y telemetría de consumo energético (Green AI).
-
----
-
-## 🏗️ Arquitectura del Sistema (Puertos y Adaptadores)
+## 🏗️ Arquitectura del Sistema (Puertos y Adaptadores - Hexagonal)
 
 El sistema backend se encuentra desacoplado en tres capas principales dentro de `backend/src/` para garantizar la separación de responsabilidades, mantenibilidad y escalabilidad del código:
 
@@ -13,26 +7,29 @@ backend/
 ├── src/
 │   ├── application/
 │   │   └── useCases/
-│   │       └── registrar_reclamo_use_case.py       # Casos de Uso (Anonimización PII + Green AI)
+│   │       ├── gestionar_reclamos_use_case.py   # Caso de Uso (Consulta y Gestión de Estado)
+│   │       └── registrar_reclamo_use_case.py   # Caso de Uso (Anonimización PII + Categorización Green AI)
 │   ├── domain/
 │   │   ├── entities/
-│   │   │   └── reclamo.py                          # Entidad Reclamo
+│   │   │   └── reclamo.py                       # Entidad Reclamo (Reglas de Negocio Core)
 │   │   ├── ports/
 │   │   │   ├── input/
-│   │   │   │   └── registrar_reclamo_port.py       # Puerto de Entrada
+│   │   │   │   ├── gestionar_reclamos_port.py   # Puerto de Entrada (Gestión/Consulta)
+│   │   │   │   └── registrar_reclamo_port.py   # Puerto de Entrada (Registro)
 │   │   │   └── output/
-│   │   │       └── reclamo_repository_port.py     # Puerto de Salida
+│   │   │       └── reclamo_repository_port.py  # Puerto de Salida (Persistencia de Datos)
 │   │   └── valueObjects/
-│   │       └── estado_reclamo.py                   # Objetos de Valor
+│   │       └── estado_reclamo.py               # Objeto de Valor (Enum: PENDIENTE, EN_PROCESO, RESUELTO)
 │   └── infrastructure/
 │       └── adapters/
 │           ├── input/
-│           │   └── api_router.py                   # Adaptador Entrada (Endpoints FastAPI)
+│           │   └── api_router.py                # Adaptador de Entrada (Endpoints FastAPI)
 │           └── output/
-│               └── supabase_reclamo_repository.py  # Adaptador Salida (Persistencia Supabase)
-├── .env                                            # Variables de Entorno (API Keys)
-├── emissions.csv                                   # Registro de Huella de Carbono
-├── main.py                                         # Punto de Entrada FastAPI + DagsHub MLflow
+│               ├── gemini_adapter.py            # Adaptador de Salida (Inferencia SLM Gemini 2.5 Flash)
+│               └── supabase_reclamo_repository.py # Adaptador de Salida (Persistencia Supabase PostgreSQL)
+├── .env                                         # Variables de Entorno (API Keys)
+├── emissions.csv                                # Registro de Huella de Carbono (CodeCarbon)
+├── main.py                                      # Punto de Entrada FastAPI + DagsHub MLflow
 ├── package-lock.json
 ├── package.json
-└── requirements.txt                                # Dependencias de Python
+└── requirements.txt                             # Dependencias de Python
