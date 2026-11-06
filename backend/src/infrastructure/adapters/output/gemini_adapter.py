@@ -40,12 +40,14 @@ class GeminiAdapter:
     def procesar_reclamo_con_ia(self, titulo: str, descripcion: str, ubicacion: str = ""):
         """Anonimiza, corrige y clasifica el reclamo en una sola llamada a Gemini.
         Los datos personales del formulario (DNI, nombre, domicilio, contacto) NO llegan aquí.
-        Devuelve (titulo, ubicacion, descripcion, categoria)."""
+        Devuelve (titulo, ubicacion, descripcion, categoria, senales).
+        `senales` alimenta la evaluación de confianza HITL:
+          {"probabilidades": {categoría: p}, "problematicas": int, "clasificado_por_ia": bool}"""
         titulo = titulo or ""
         descripcion = descripcion or ""
         ubicacion = ubicacion or ""
         if not titulo.strip() and not descripcion.strip():
-            return titulo, ubicacion, descripcion, "Vías Públicas"
+            return titulo, ubicacion, descripcion, "Vías Públicas", self._senales_local("")
 
         # DNI, teléfonos y correos escritos en el texto se enmascaran antes de salir hacia Google
         titulo = self._anonimizar_local(titulo)
@@ -76,11 +78,18 @@ class GeminiAdapter:
            - Parques y Jardines
            - Alumbrado
 
+        4. CONFIANZA DE LA CLASIFICACIÓN (sé calibrado y honesto, no optimista):
+           - "probabilidades": probabilidad de que cada una de las 4 categorías sea la correcta (suman 1).
+             Si el texto es vago o mezcla problemas de distintas categorías, reparte la probabilidad.
+           - "problematicas": cuántos problemas distintos describe el vecino (número entero, mínimo 1).
+
         Reclamo a procesar:
         {json.dumps({"titulo": titulo, "ubicacion": ubicacion, "descripcion": descripcion}, ensure_ascii=False)}
 
         RESPONDE ÚNICAMENTE EN FORMATO JSON ESTRICTO (sin bloques markdown tipo ```json):
-        {{"titulo": "...", "ubicacion": "...", "descripcion": "...", "categoria": "Nombre de la Categoría"}}
+        {{"titulo": "...", "ubicacion": "...", "descripcion": "...", "categoria": "Nombre de la Categoría",
+          "probabilidades": {{"Vías Públicas": 0.0, "Limpieza Pública": 0.0, "Parques y Jardines": 0.0, "Alumbrado": 0.0}},
+          "problematicas": 1}}
         """
 
         for modelo in self.modelos:
@@ -97,27 +106,65 @@ class GeminiAdapter:
                 titulo_ia = data.get("titulo") or titulo
                 ubicacion_ia = data.get("ubicacion") or ubicacion
                 descripcion_ia = data.get("descripcion") or descripcion
-                categoria = data.get("categoria", "Vías Públicas")
-
-                if categoria not in CATEGORIAS_VALIDAS:
-                    for cat in CATEGORIAS_VALIDAS:
-                        if cat.lower() in categoria.lower():
-                            categoria = cat
-                            break
-                    else:
-                        categoria = "Vías Públicas"
+                categoria = self._normalizar_categoria(data.get("categoria")) or "Vías Públicas"
+                senales = {
+                    "probabilidades": self._leer_probabilidades(data.get("probabilidades")),
+                    "problematicas": self._leer_entero(data.get("problematicas")),
+                    "clasificado_por_ia": True,
+                }
 
                 # Por si la IA dejó algún DNI, teléfono o correo sin enmascarar
                 return (self._limpiar(titulo_ia), self._limpiar(ubicacion_ia),
-                        self._limpiar(descripcion_ia), categoria)
+                        self._limpiar(descripcion_ia), categoria, senales)
 
             except Exception as e:
                 print(f"⚠️ Error al procesar reclamo con Gemini API ({modelo}): {e}", flush=True)
 
         # Ningún modelo respondió: nunca se guardan datos personales sin proteger
         print("⚠️ Gemini no disponible. Se aplica anonimización y clasificación local.", flush=True)
+        texto = f"{titulo} {ubicacion} {descripcion}"
         return (self._limpiar(titulo), self._limpiar(ubicacion), self._limpiar(descripcion),
-                self._clasificar_local(f"{titulo} {ubicacion} {descripcion}"))
+                self._clasificar_local(texto), self._senales_local(texto))
+
+    @staticmethod
+    def _normalizar_categoria(nombre) -> str:
+        """Devuelve la categoría oficial que corresponde a `nombre`, o None si no coincide con ninguna."""
+        nombre = str(nombre or "")
+        if nombre in CATEGORIAS_VALIDAS:
+            return nombre
+        return next((cat for cat in CATEGORIAS_VALIDAS if cat.lower() in nombre.lower()), None)
+
+    @classmethod
+    def _leer_probabilidades(cls, crudas) -> dict:
+        # Se ignoran claves desconocidas y valores no numéricos: sin señal válida la confianza baja
+        probabilidades = {}
+        if isinstance(crudas, dict):
+            for nombre, valor in crudas.items():
+                categoria = cls._normalizar_categoria(nombre)
+                try:
+                    if categoria:
+                        probabilidades[categoria] = max(float(valor), 0.0)
+                except (TypeError, ValueError):
+                    pass
+        return probabilidades
+
+    @staticmethod
+    def _leer_entero(valor) -> int:
+        try:
+            return max(1, int(valor))
+        except (TypeError, ValueError):
+            return 1
+
+    @staticmethod
+    def _senales_local(texto: str) -> dict:
+        # Sin Gemini: la "probabilidad" es la proporción de palabras clave de cada categoría
+        texto = texto.lower()
+        puntajes = {cat: sum(p in texto for p in palabras) for cat, palabras in PALABRAS_CLAVE.items()}
+        return {
+            "probabilidades": {cat: float(n) for cat, n in puntajes.items() if n > 0},
+            "problematicas": max(1, sum(1 for n in puntajes.values() if n > 0)),
+            "clasificado_por_ia": False,
+        }
 
     @classmethod
     def _limpiar(cls, texto: str) -> str:

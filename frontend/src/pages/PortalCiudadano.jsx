@@ -27,6 +27,17 @@ function validar(f) {
   return errores;
 }
 
+// El ticket recién registrado se guarda en la pestaña (sessionStorage) para que el paso 2
+// siga visible si el vecino recarga la página. Se borra al cerrar la pestaña o al registrar otro.
+const CLAVE_TICKET = 'portal_ticket';
+const leerTicketGuardado = () => {
+  try {
+    return JSON.parse(sessionStorage.getItem(CLAVE_TICKET) || 'null');
+  } catch {
+    return null;
+  }
+};
+
 function Campo({ etiqueta, error, ayuda, children }) {
   return (
     <label className={`campo ${error ? 'con-error' : ''}`}>
@@ -37,12 +48,12 @@ function Campo({ etiqueta, error, ayuda, children }) {
   );
 }
 
-export default function PortalCiudadano({ irA }) {
+export default function PortalCiudadano() {
   const [form, setForm] = useState(FORMULARIO_VACIO);
   const [errores, setErrores] = useState({});
   const [enviando, setEnviando] = useState(false);
   const [errorServidor, setErrorServidor] = useState('');
-  const [ticket, setTicket] = useState(null);
+  const [ticket, setTicket] = useState(leerTicketGuardado);
   const [copiado, setCopiado] = useState(false);
 
   const cambiar = (campo, filtro) => (e) => {
@@ -70,6 +81,7 @@ export default function PortalCiudadano({ irA }) {
         direccion: form.direccion.trim(),
         contacto: form.contacto.trim(),
       });
+      sessionStorage.setItem(CLAVE_TICKET, JSON.stringify(respuesta));
       setTicket(respuesta);
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } catch (err) {
@@ -81,19 +93,19 @@ export default function PortalCiudadano({ irA }) {
 
   const nuevoReclamo = () => {
     setForm(FORMULARIO_VACIO);
+    sessionStorage.removeItem(CLAVE_TICKET);
     setTicket(null);
     setCopiado(false);
   };
 
   const copiarCodigo = () => {
-    const texto = `Ticket ${formatoTicket(ticket.ticket)} · Código ${ticket.codigo_consulta}`;
-    navigator.clipboard?.writeText(texto).then(() => setCopiado(true)).catch(() => {});
+    navigator.clipboard?.writeText(ticket.codigo_consulta).then(() => setCopiado(true)).catch(() => {});
   };
 
   return (
     <div className="pagina">
-      <Encabezado onInicio={() => irA('inicio')} subtitulo="Mesa de Partes Virtual">
-        <button className="boton boton-claro" onClick={() => irA('inicio')}>← Volver al inicio</button>
+      <Encabezado subtitulo="Mesa de Partes Virtual">
+        <a className="boton boton-claro" href="#/inicio">← Volver al inicio</a>
       </Encabezado>
 
       <main className="contenedor contenedor-angosto">
@@ -181,6 +193,9 @@ export default function PortalCiudadano({ irA }) {
               <div>
                 <span className="dato-etiqueta">Categoría asignada por la IA</span>
                 <InsigniaCategoria categoria={ticket.categoria_asignada} />
+                {ticket.requiere_auditoria && (
+                  <span className="nota">Un especialista municipal confirmará la categoría antes de derivarlo.</span>
+                )}
               </div>
               <div>
                 <span className="dato-etiqueta">Estado</span>
@@ -226,7 +241,7 @@ export default function PortalCiudadano({ irA }) {
 
             <div className="acciones-ticket">
               <button className="boton boton-claro" onClick={() => window.print()}>🖨️ Imprimir constancia</button>
-              <button className="boton boton-claro" onClick={() => irA('consulta')}>🔎 Consultar mi trámite</button>
+              <a className="boton boton-claro" href="#/consulta">🔎 Consultar mi trámite</a>
               <button className="boton boton-primario" onClick={nuevoReclamo}>Registrar otro reclamo</button>
             </div>
           </section>

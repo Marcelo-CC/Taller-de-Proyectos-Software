@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Encabezado, PiePagina } from '../components/Layout';
-import { listarReclamos, cambiarEstado } from '../services/api';
-import { ESTADOS, formatoTicket } from '../constantes';
+import { listarReclamos, cambiarEstado, auditarReclamo } from '../services/api';
+import { ESTADOS, ESTADO_AUDITORIA, estadoVisible, formatoTicket } from '../constantes';
 import TablaReclamos from './sigem/TablaReclamos';
 import BusquedaFiltrado from './sigem/BusquedaFiltrado';
 import DashboardGreenAI from './sigem/DashboardGreenAI';
@@ -12,7 +12,7 @@ const SECCIONES = [
   { id: 'dashboard', titulo: 'Dashboard Green AI', icono: '🌱' },
 ];
 
-export default function Sigem({ irA, sesion, onSalir }) {
+export default function Sigem({ sesion, onSalir }) {
   const [seccion, setSeccion] = useState('gestion');
   const [reclamos, setReclamos] = useState([]);
   const [cargando, setCargando] = useState(true);
@@ -35,16 +35,16 @@ export default function Sigem({ irA, sesion, onSalir }) {
     traer();
   };
 
-  const onCambiarEstado = async (id, estado) => {
-    const anterior = reclamos.find((r) => r.id === id)?.estado;
+  // Actualización optimista: se aplica `cambios` en pantalla y se revierte si Supabase falla
+  const actualizar = async (id, cambios, guardar, mensaje) => {
+    const anterior = reclamos.find((r) => r.id === id);
     setActualizando(id);
-    // Actualización optimista: se revierte si el servidor falla
-    setReclamos((lista) => lista.map((r) => (r.id === id ? { ...r, estado } : r)));
+    setReclamos((lista) => lista.map((r) => (r.id === id ? { ...r, ...cambios } : r)));
     try {
-      await cambiarEstado(id, estado, sesion.token);
-      setAviso(`Ticket ${formatoTicket(id)} actualizado a "${ESTADOS[estado].etiqueta}".`);
+      await guardar();
+      setAviso(mensaje);
     } catch (err) {
-      setReclamos((lista) => lista.map((r) => (r.id === id ? { ...r, estado: anterior } : r)));
+      setReclamos((lista) => lista.map((r) => (r.id === id ? anterior : r)));
       setAviso(`⚠️ No se pudo actualizar el ticket ${formatoTicket(id)}: ${err.message}`);
     } finally {
       setActualizando(null);
@@ -52,11 +52,29 @@ export default function Sigem({ irA, sesion, onSalir }) {
     }
   };
 
-  const conteo = (estado) => reclamos.filter((r) => (r.estado || 'PENDIENTE') === estado).length;
+  const onCambiarEstado = (id, estado) => actualizar(
+    id, { estado }, () => cambiarEstado(id, estado, sesion.token),
+    `Ticket ${formatoTicket(id)} actualizado a "${ESTADOS[estado].etiqueta}".`,
+  );
+
+  // HITL: confirma o corrige la categoría y libera el reclamo hacia la gerencia (pasa a "En proceso")
+  const onAuditar = (id, categoria) => {
+    const corregido = reclamos.find((r) => r.id === id)?.categoria !== categoria;
+    return actualizar(
+      id, { categoria, requiere_auditoria: false, estado: 'EN_PROCESO' },
+      () => auditarReclamo(id, categoria, sesion.token),
+      `Ticket ${formatoTicket(id)} auditado: categoría ${corregido ? 'corregida a' : 'confirmada como'} `
+        + `"${categoria}" y derivado a su gerencia.`,
+    );
+  };
+
+  // Cada reclamo cuenta en un solo contador: los retenidos por HITL no suman en "Pendiente"
+  const conteo = (estado) => reclamos.filter((r) => estadoVisible(r) === estado).length;
+  const contadores = { AUDITORIA: ESTADO_AUDITORIA, ...ESTADOS };
 
   return (
     <div className="pagina">
-      <Encabezado onInicio={() => irA('inicio')} subtitulo="Sistema de Gestión Interna (SIGEM)">
+      <Encabezado subtitulo="Sistema de Gestión Interna (SIGEM)">
         <div className="usuario-sesion">
           <span className="avatar" aria-hidden="true">{sesion.nombre[0]}</span>
           <span><strong>{sesion.nombre}</strong><small>Rol: {sesion.rol}</small></span>
@@ -98,7 +116,7 @@ export default function Sigem({ irA, sesion, onSalir }) {
             {seccion === 'gestion' && (
               <>
                 <div className="contadores-estado">
-                  {Object.entries(ESTADOS).map(([valor, e]) => (
+                  {Object.entries(contadores).map(([valor, e]) => (
                     <div key={valor} className={`contador ${e.clase}`}>
                       <span className="contador-icono" aria-hidden="true">{e.icono}</span>
                       <span className="contador-valor">{conteo(valor)}</span>
@@ -106,11 +124,13 @@ export default function Sigem({ irA, sesion, onSalir }) {
                     </div>
                   ))}
                 </div>
-                <TablaReclamos reclamos={reclamos} onCambiarEstado={onCambiarEstado} actualizando={actualizando} />
+                <TablaReclamos reclamos={reclamos} onCambiarEstado={onCambiarEstado} onAuditar={onAuditar}
+                  actualizando={actualizando} />
               </>
             )}
             {seccion === 'busqueda' && (
-              <BusquedaFiltrado reclamos={reclamos} onCambiarEstado={onCambiarEstado} actualizando={actualizando} />
+              <BusquedaFiltrado reclamos={reclamos} onCambiarEstado={onCambiarEstado} onAuditar={onAuditar}
+                actualizando={actualizando} />
             )}
             {seccion === 'dashboard' && <DashboardGreenAI reclamos={reclamos} />}
           </>

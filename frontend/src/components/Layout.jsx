@@ -1,4 +1,4 @@
-import { colorCategoria, ESTADOS } from '../constantes';
+import { colorCategoria, ESTADOS, ESTADO_AUDITORIA } from '../constantes';
 
 export function Escudo({ tamano = 44 }) {
   return (
@@ -12,7 +12,7 @@ export function Escudo({ tamano = 44 }) {
   );
 }
 
-export function Encabezado({ onInicio, subtitulo, children }) {
+export function Encabezado({ subtitulo, children }) {
   return (
     <header className="encabezado">
       <div className="franja-superior">
@@ -20,13 +20,13 @@ export function Encabezado({ onInicio, subtitulo, children }) {
         <span>Plataforma de Atención Vecinal</span>
       </div>
       <div className="barra-institucional">
-        <button className="marca" onClick={onInicio} aria-label="Ir al inicio">
+        <a className="marca" href="#/inicio" aria-label="Ir al inicio">
           <Escudo />
           <span>
             <strong>Municipalidad Provincial de Huancayo</strong>
             <small>{subtitulo}</small>
           </span>
-        </button>
+        </a>
         <div className="acciones-encabezado">{children}</div>
       </div>
     </header>
@@ -76,7 +76,7 @@ function Resaltado({ texto, termino }) {
 }
 
 export function InsigniaEstado({ estado }) {
-  const e = ESTADOS[estado] || ESTADOS.PENDIENTE;
+  const e = estado === 'AUDITORIA' ? ESTADO_AUDITORIA : ESTADOS[estado] || ESTADOS.PENDIENTE;
   return (
     <span className={`insignia-estado ${e.clase}`}>
       <span aria-hidden="true">{e.icono}</span> {e.etiqueta}

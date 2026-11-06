@@ -1,9 +1,9 @@
 import { Encabezado, PiePagina } from '../components/Layout';
 
-export default function Inicio({ irA }) {
+export default function Inicio() {
   return (
     <div className="pagina">
-      <Encabezado onInicio={() => irA('inicio')} subtitulo="Portal de Atención Vecinal" />
+      <Encabezado subtitulo="Portal de Atención Vecinal" />
 
       <section className="hero">
         <div className="hero-contenido">
@@ -17,7 +17,7 @@ export default function Inicio({ irA }) {
       </section>
 
       <main className="contenedor modulos">
-        <button className="tarjeta-modulo" onClick={() => irA('ciudadano')}>
+        <a className="tarjeta-modulo" href="#/ciudadano">
           <span className="modulo-icono modulo-a" aria-hidden="true">📝</span>
           <span className="modulo-etiqueta">Módulo A · Vecinos</span>
           <h2>Mesa de Partes Virtual y Reclamos Vecinales</h2>
@@ -26,9 +26,9 @@ export default function Inicio({ irA }) {
             categoría asignada al instante.
           </p>
           <span className="modulo-accion">Registrar un reclamo →</span>
-        </button>
+        </a>
 
-        <button className="tarjeta-modulo" onClick={() => irA('consulta')}>
+        <a className="tarjeta-modulo" href="#/consulta">
           <span className="modulo-icono modulo-c" aria-hidden="true">🔎</span>
           <span className="modulo-etiqueta">Módulo C · Seguimiento</span>
           <h2>Consulta del Estado de su Trámite</h2>
@@ -37,9 +37,9 @@ export default function Inicio({ irA }) {
             su reclamo.
           </p>
           <span className="modulo-accion">Consultar mi trámite →</span>
-        </button>
+        </a>
 
-        <button className="tarjeta-modulo" onClick={() => irA('login')}>
+        <a className="tarjeta-modulo" href="#/login">
           <span className="modulo-icono modulo-b" aria-hidden="true">🏛️</span>
           <span className="modulo-etiqueta">Módulo B · Personal Municipal</span>
           <h2>Acceso al Sistema de Gestión Interna (SIGEM)</h2>
@@ -48,7 +48,7 @@ export default function Inicio({ irA }) {
             Green AI.
           </p>
           <span className="modulo-accion">Acceso Personal Municipal →</span>
-        </button>
+        </a>
       </main>
 
       <section className="contenedor franja-beneficios">

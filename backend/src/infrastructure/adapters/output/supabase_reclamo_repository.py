@@ -2,7 +2,8 @@ from src.domain.ports.output.reclamo_repository_port import ReclamoRepositoryPor
 from src.domain.entities.reclamo import Reclamo
 
 # Columnas públicas: codigo_hash nunca se lee por la API (la base no da permiso de lectura sobre ella)
-COLUMNAS = "id,created_at,titulo,descripcion,categoria,emisiones_gco2,consumo_kwh,estado"
+COLUMNAS = ("id,created_at,titulo,descripcion,categoria,emisiones_gco2,consumo_kwh,estado,"
+            "confianza,requiere_auditoria")
 
 class SupabaseReclamoRepository(ReclamoRepositoryPort):
     def __init__(self, supabase_client):
@@ -14,6 +15,8 @@ class SupabaseReclamoRepository(ReclamoRepositoryPort):
             "descripcion": reclamo.descripcion,
             "categoria": reclamo.categoria,
             "estado": reclamo.estado,
+            "confianza": reclamo.confianza,
+            "requiere_auditoria": reclamo.requiere_auditoria,
             "emisiones_gco2": emisiones_gco2,
             "consumo_kwh": consumo_kwh,
             "codigo_hash": codigo_hash

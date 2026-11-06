@@ -39,6 +39,8 @@ main { flex: 1; }
 }
 
 .marca {
+  color: inherit;
+  text-decoration: none;
   display: flex;
   align-items: center;
   gap: 12px;
@@ -93,6 +95,7 @@ main { flex: 1; }
   transition: background 0.15s, border-color 0.15s;
 }
 .boton:disabled { opacity: 0.6; cursor: not-allowed; }
+a.boton { text-decoration: none; }
 .boton-primario { background: var(--azul-800); color: #fff; }
 .boton-primario:hover:not(:disabled) { background: var(--azul-700); }
 .boton-claro { background: var(--superficie); color: var(--azul-800); border-color: var(--borde-fuerte); }
@@ -143,6 +146,8 @@ main { flex: 1; }
   margin-top: -64px;
 }
 .tarjeta-modulo {
+  color: inherit;
+  text-decoration: none;
   text-align: left;
   background: var(--superficie);
   border: 1px solid var(--borde);
@@ -440,6 +445,24 @@ legend {
 .estado-pendiente { color: var(--estado-pendiente); background: var(--estado-pendiente-fondo); }
 .estado-proceso { color: var(--estado-proceso); background: var(--estado-proceso-fondo); }
 .estado-resuelto { color: var(--estado-resuelto); background: var(--estado-resuelto-fondo); }
+.estado-auditoria { color: var(--hitl-texto); background: var(--hitl-fondo); }
+
+/* ============ HITL: revisión humana de la clasificación de la IA ============ */
+.celda-categoria { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; }
+.alerta-confianza {
+  display: inline-block;
+  background: var(--hitl-fondo);
+  color: var(--hitl-texto);
+  border: 1px solid #fca5a5;
+  border-radius: 6px;
+  padding: 2px 8px;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.5;
+}
+.accion-auditoria { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; }
+.accion-auditoria select { max-width: 100%; }
+.boton-chico { padding: 6px 12px; font-size: 0.82rem; }
 
 /* ============ Login ============ */
 .login { display: grid; place-items: center; padding-top: 48px; padding-bottom: 48px; }
@@ -528,6 +551,8 @@ legend {
 .contador.estado-pendiente .contador-icono { background: var(--estado-pendiente-fondo); }
 .contador.estado-proceso .contador-icono { background: var(--estado-proceso-fondo); }
 .contador.estado-resuelto .contador-icono { background: var(--estado-resuelto-fondo); }
+.contador.estado-auditoria .contador-icono { background: var(--hitl-fondo); }
+.contador.estado-auditoria { border-color: #fca5a5; }
 .contador { background: var(--superficie); }
 .contador-valor { font-size: 1.6rem; font-weight: 800; color: var(--texto); line-height: 1.1; font-variant-numeric: tabular-nums; }
 .contador-etiqueta { font-size: 0.85rem; color: var(--texto-secundario); font-weight: 600; }

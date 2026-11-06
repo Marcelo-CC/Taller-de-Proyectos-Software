@@ -1,10 +1,43 @@
 import { useState } from 'react';
 import { InsigniaCategoria, InsigniaEstado, TextoAnonimizado } from '../../components/Layout';
-import { ESTADOS, formatoFecha, formatoTicket } from '../../constantes';
+import { CATEGORIAS, ESTADOS, formatoFecha, formatoTicket } from '../../constantes';
 
 const POR_PAGINA = 12;
 
-export default function TablaReclamos({ reclamos, onCambiarEstado, actualizando, resaltar = '' }) {
+// HITL: alerta bajo la categoría cuando la confianza de la IA no alcanza el umbral (70 %)
+function AlertaConfianza({ confianza }) {
+  const porcentaje = confianza == null ? '—' : `${Math.round(confianza * 100)}%`;
+  return <span className="alerta-confianza" role="note">Confianza: {porcentaje} (Revisión requerida)</span>;
+}
+
+// HITL: el operador confirma la categoría sugerida o la corrige, y libera el reclamo a la gerencia
+function AccionAuditoria({ reclamo, onAuditar, ocupado }) {
+  const [categoria, setCategoria] = useState(reclamo.categoria);
+  const corrige = categoria !== reclamo.categoria;
+  return (
+    <div className="accion-auditoria">
+      <InsigniaEstado estado="AUDITORIA" />
+      <select
+        aria-label={`Categoría final del ticket ${formatoTicket(reclamo.id)}`}
+        value={categoria}
+        disabled={ocupado}
+        onChange={(e) => setCategoria(e.target.value)}
+      >
+        {CATEGORIAS.map((c) => (
+          <option key={c.nombre} value={c.nombre}>
+            {c.nombre}{c.nombre === reclamo.categoria ? ' (sugerida por IA)' : ''}
+          </option>
+        ))}
+      </select>
+      <button className="boton boton-primario boton-chico" disabled={ocupado}
+        onClick={() => onAuditar(reclamo.id, categoria)}>
+        {corrige ? 'Corregir y derivar' : 'Confirmar y derivar'}
+      </button>
+    </div>
+  );
+}
+
+export default function TablaReclamos({ reclamos, onCambiarEstado, onAuditar, actualizando, resaltar = '' }) {
   const [pagina, setPagina] = useState(1);
   const [expandido, setExpandido] = useState(null);
 
@@ -37,7 +70,10 @@ export default function TablaReclamos({ reclamos, onCambiarEstado, actualizando,
                 <td className="celda-ticket">{formatoTicket(r.id)}</td>
                 <td className="celda-fecha">{formatoFecha(r.created_at)}</td>
                 <td className="celda-titulo"><TextoAnonimizado texto={r.titulo} resaltar={resaltar} /></td>
-                <td><InsigniaCategoria categoria={r.categoria} /></td>
+                <td className="celda-categoria">
+                  <InsigniaCategoria categoria={r.categoria} />
+                  {r.requiere_auditoria && <AlertaConfianza confianza={r.confianza} />}
+                </td>
                 <td className="celda-texto">
                   <div className={expandido === r.id ? '' : 'texto-recortado'}>
                     <TextoAnonimizado texto={r.descripcion} resaltar={resaltar} />
@@ -47,17 +83,23 @@ export default function TablaReclamos({ reclamos, onCambiarEstado, actualizando,
                   </button>
                 </td>
                 <td className="celda-estado">
-                  <InsigniaEstado estado={r.estado} />
-                  <select
-                    aria-label={`Cambiar estado del ticket ${formatoTicket(r.id)}`}
-                    value={r.estado || 'PENDIENTE'}
-                    disabled={actualizando === r.id}
-                    onChange={(e) => onCambiarEstado(r.id, e.target.value)}
-                  >
-                    {Object.entries(ESTADOS).map(([valor, e]) => (
-                      <option key={valor} value={valor}>{e.etiqueta}</option>
-                    ))}
-                  </select>
+                  {r.requiere_auditoria ? (
+                    <AccionAuditoria reclamo={r} onAuditar={onAuditar} ocupado={actualizando === r.id} />
+                  ) : (
+                    <>
+                      <InsigniaEstado estado={r.estado} />
+                      <select
+                        aria-label={`Cambiar estado del ticket ${formatoTicket(r.id)}`}
+                        value={r.estado || 'PENDIENTE'}
+                        disabled={actualizando === r.id}
+                        onChange={(e) => onCambiarEstado(r.id, e.target.value)}
+                      >
+                        {Object.entries(ESTADOS).map(([valor, e]) => (
+                          <option key={valor} value={valor}>{e.etiqueta}</option>
+                        ))}
+                      </select>
+                    </>
+                  )}
                 </td>
               </tr>
             ))}

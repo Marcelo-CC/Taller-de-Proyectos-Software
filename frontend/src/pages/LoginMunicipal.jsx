@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Encabezado, PiePagina, Escudo } from '../components/Layout';
 import { iniciarSesion } from '../services/api';
 
-export default function LoginMunicipal({ irA, onIngresar }) {
+export default function LoginMunicipal({ onIngresar }) {
   const [email, setEmail] = useState('');
   const [clave, setClave] = useState('');
   const [error, setError] = useState('');
@@ -30,8 +30,8 @@ export default function LoginMunicipal({ irA, onIngresar }) {
 
   return (
     <div className="pagina">
-      <Encabezado onInicio={() => irA('inicio')} subtitulo="Sistema de Gestión Interna (SIGEM)">
-        <button className="boton boton-claro" onClick={() => irA('inicio')}>← Volver al inicio</button>
+      <Encabezado subtitulo="Sistema de Gestión Interna (SIGEM)">
+        <a className="boton boton-claro" href="#/inicio">← Volver al inicio</a>
       </Encabezado>
 
       <main className="contenedor login">

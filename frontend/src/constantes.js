@@ -16,6 +16,13 @@ export const ESTADOS = {
   RESUELTO: { etiqueta: 'Resuelto', icono: '✓', clase: 'estado-resuelto' },
 };
 
+// HITL: por debajo de este umbral la IA no deriva el reclamo; lo retiene para revisión humana
+export const UMBRAL_CONFIANZA = 0.7;
+export const ESTADO_AUDITORIA = { etiqueta: 'Pendiente de auditoría HITL', icono: '⚠', clase: 'estado-auditoria' };
+
+// Estado que ve el operador: un reclamo retenido se muestra como "AUDITORIA" aunque en la base siga PENDIENTE
+export const estadoVisible = (r) => (r.requiere_auditoria ? 'AUDITORIA' : r.estado || 'PENDIENTE');
+
 export const formatoFecha = (iso) =>
   new Date(iso).toLocaleString('es-PE', {
     day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit',

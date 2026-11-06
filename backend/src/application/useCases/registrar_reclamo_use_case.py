@@ -4,6 +4,7 @@ from codecarbon import EmissionsTracker
 
 from src.domain.entities.reclamo import Reclamo
 from src.domain.valueObjects import codigo_consulta
+from src.domain.services import evaluacion_confianza
 from src.domain.ports.input.registrar_reclamo_port import RegistrarReclamoPort
 from src.domain.ports.output.reclamo_repository_port import ReclamoRepositoryPort
 from src.infrastructure.adapters.output.gemini_adapter import GeminiAdapter
@@ -44,7 +45,7 @@ class RegistrarReclamoUseCase(RegistrarReclamoPort):
         tracker.start()
 
         # 3. LA IA (GEMINI) CORRIGE, ANONIMIZA EL TEXTO LIBRE Y CLASIFICA (una sola llamada)
-        titulo_protegido, ubicacion_corregida, detalle, categoria_ia = self.gemini_adapter.procesar_reclamo_con_ia(
+        titulo_protegido, ubicacion_corregida, detalle, categoria_ia, senales = self.gemini_adapter.procesar_reclamo_con_ia(
             titulo_limpio, descripcion_limpia, ubicacion
         )
 
@@ -55,6 +56,17 @@ class RegistrarReclamoUseCase(RegistrarReclamoPort):
 
         # Si el cliente no mandó categoría, usamos la que detectó la IA
         categoria_final = categoria if (categoria and categoria != "Vías Públicas") else categoria_ia
+
+        # HITL: confianza de la clasificación y regla de enrutamiento (umbral 70 %)
+        confianza = evaluacion_confianza.evaluar(
+            probabilidades=senales["probabilidades"],
+            categoria=categoria_final,
+            problematicas=senales["problematicas"],
+            texto=descripcion_limpia,
+            clasificado_por_ia=senales["clasificado_por_ia"],
+        )
+        # True → queda retenido como "Pendiente de auditoría HITL"; False → enrutamiento directo
+        requiere_auditoria = evaluacion_confianza.requiere_auditoria(confianza)
 
         # 5. TEXTO FINAL CON FORMATO FIJO
         partes = []
@@ -68,7 +80,9 @@ class RegistrarReclamoUseCase(RegistrarReclamoPort):
         nuevo_reclamo = Reclamo(
             titulo=titulo_protegido,
             descripcion=descripcion_protegida,
-            categoria=categoria_final
+            categoria=categoria_final,
+            confianza=confianza,
+            requiere_auditoria=requiere_auditoria
         )
 
         # Resumen en consola; si algo falla al imprimir, no interrumpe el registro
@@ -79,6 +93,8 @@ class RegistrarReclamoUseCase(RegistrarReclamoPort):
             print(f"Texto Anonimizado           : {str(descripcion_protegida)[:60]}...")
             print(f"Emisiones de CO2e estimadas : {emisiones_kg:.8f} kg ({emisiones_gco2:.6f} gCO2e)")
             print(f"Consumo energético          : {consumo_kwh:.8f} kWh")
+            print(f"Confianza de la IA (HITL)   : {confianza:.0%} -> "
+                  f"{'Pendiente de auditoría HITL' if requiere_auditoria else 'Enrutamiento directo'}")
             print("Cumplimiento Criterio ICACIT: AG-C08 (Sostenibilidad)")
             print("==================================================\n", flush=True)
         except Exception as e:
@@ -91,6 +107,8 @@ class RegistrarReclamoUseCase(RegistrarReclamoPort):
                 mlflow.log_param("categoria_ia", categoria_final)
                 mlflow.log_metric("emisiones_gco2", emisiones_gco2)
                 mlflow.log_metric("consumo_kwh", consumo_kwh)
+                mlflow.log_metric("confianza_ia", confianza)
+                mlflow.log_param("requiere_auditoria", requiere_auditoria)
         except Exception as e:
             print(f"⚠️ No se pudo registrar en MLflow: {e}", flush=True)
 
@@ -114,5 +132,7 @@ class RegistrarReclamoUseCase(RegistrarReclamoPort):
             "emisiones_gco2": emisiones_gco2,
             "consumo_kwh": consumo_kwh,
             "categoria_detectada": categoria_final,
+            "confianza": confianza,
+            "requiere_auditoria": requiere_auditoria,
             "anonimizado_por_ia": True
         }

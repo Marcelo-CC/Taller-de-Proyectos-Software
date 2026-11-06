@@ -60,6 +60,9 @@ def crear_reclamo(
             "ticket": resultado["ticket"],
             "codigo_consulta": resultado["codigo_consulta"],
             "categoria_asignada": resultado.get("categoria_detectada"),
+            # HITL: confianza (0.0–1.0) y si el reclamo quedó retenido para revisión humana
+            "confianza": resultado["confianza"],
+            "requiere_auditoria": resultado["requiere_auditoria"],
             "titulo_anonimizado": resultado["titulo_anonimizado"],
             "descripcion_anonimizada": resultado["descripcion_anonimizada"],
             "telemetria_green_ai": {

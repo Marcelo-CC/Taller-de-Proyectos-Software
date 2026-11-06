@@ -25,14 +25,17 @@ export default function App() {
 
   // La vista vive en la URL (#/ciudadano, #/sigem…) para que funcione el botón "Atrás"
   useEffect(() => {
-    const alCambiar = () => setVista(vistaDesdeUrl());
+    // Los enlaces (#/ciudadano, #/consulta…) cambian el hash: se muestra la vista y se sube al inicio
+    const alCambiar = () => {
+      setVista(vistaDesdeUrl());
+      window.scrollTo(0, 0);
+    };
     window.addEventListener('hashchange', alCambiar);
     return () => window.removeEventListener('hashchange', alCambiar);
   }, []);
 
   const irA = (destino) => {
     window.location.hash = `/${destino}`;
-    window.scrollTo(0, 0);
   };
 
   const ingresar = (usuario) => {
@@ -47,15 +50,15 @@ export default function App() {
     irA('inicio');
   };
 
-  if (vista === 'ciudadano') return <PortalCiudadano irA={irA} />;
-  if (vista === 'consulta') return <ConsultaTramite irA={irA} />;
+  if (vista === 'ciudadano') return <PortalCiudadano />;
+  if (vista === 'consulta') return <ConsultaTramite />;
   if (vista === 'sigem' && sesion) {
     return (
       <Suspense fallback={<div className="cargando-bloque"><span className="girando" /> Cargando SIGEM…</div>}>
-        <Sigem irA={irA} sesion={sesion} onSalir={salir} />
+        <Sigem sesion={sesion} onSalir={salir} />
       </Suspense>
     );
   }
-  if (vista === 'login' || vista === 'sigem') return <LoginMunicipal irA={irA} onIngresar={ingresar} />;
-  return <Inicio irA={irA} />;
+  if (vista === 'login' || vista === 'sigem') return <LoginMunicipal onIngresar={ingresar} />;
+  return <Inicio />;
 }

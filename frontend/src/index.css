@@ -25,6 +25,9 @@
   --estado-proceso-fondo: #e7f0fc;
   --estado-resuelto: #006300;
   --estado-resuelto-fondo: #e6f4e6;
+  /* HITL: reclamo retenido por baja confianza de la IA (rojo tenue / rojo oscuro, contraste 5.9:1) */
+  --hitl-fondo: #fee2e2;
+  --hitl-texto: #b91c1c;
   --error: #b42318;
   --error-fondo: #fdecea;
 

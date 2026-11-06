@@ -1,9 +1,11 @@
 import { useMemo, useState } from 'react';
 import TablaReclamos from './TablaReclamos';
-import { CATEGORIAS, ESTADOS } from '../../constantes';
+import { CATEGORIAS, ESTADOS, ESTADO_AUDITORIA, estadoVisible } from '../../constantes';
+
+const FILTROS_ESTADO = { AUDITORIA: ESTADO_AUDITORIA, ...ESTADOS };
 
 // Sección 2 (HU-07): filtros por categoría y estado + buscador en tiempo real
-export default function BusquedaFiltrado({ reclamos, onCambiarEstado, actualizando }) {
+export default function BusquedaFiltrado({ reclamos, onCambiarEstado, onAuditar, actualizando }) {
   const [categoria, setCategoria] = useState('');
   const [estado, setEstado] = useState('');
   const [busqueda, setBusqueda] = useState('');
@@ -11,7 +13,7 @@ export default function BusquedaFiltrado({ reclamos, onCambiarEstado, actualizan
   const termino = busqueda.trim().toLowerCase();
   const filtrados = useMemo(() => reclamos.filter((r) =>
     (!categoria || r.categoria === categoria) &&
-    (!estado || (r.estado || 'PENDIENTE') === estado) &&
+    (!estado || estadoVisible(r) === estado) &&
     (!termino || `${r.titulo} ${r.descripcion}`.toLowerCase().includes(termino))
   ), [reclamos, categoria, estado, termino]);
 
@@ -45,7 +47,7 @@ export default function BusquedaFiltrado({ reclamos, onCambiarEstado, actualizan
         <div className="grupo-filtro" role="group" aria-label="Filtrar por estado">
           <span className="grupo-etiqueta">Estado</span>
           <button className={`chip ${!estado ? 'activo' : ''}`} onClick={() => setEstado('')}>Todos</button>
-          {Object.entries(ESTADOS).map(([valor, e]) => (
+          {Object.entries(FILTROS_ESTADO).map(([valor, e]) => (
             <button key={valor} className={`chip ${estado === valor ? 'activo' : ''}`}
               onClick={() => setEstado(valor)} aria-pressed={estado === valor}>
               <span aria-hidden="true">{e.icono}</span> {e.etiqueta}
@@ -63,6 +65,7 @@ export default function BusquedaFiltrado({ reclamos, onCambiarEstado, actualizan
         key={`${categoria}|${estado}|${termino}`}
         reclamos={filtrados}
         onCambiarEstado={onCambiarEstado}
+        onAuditar={onAuditar}
         actualizando={actualizando}
         resaltar={busqueda.trim()}
       />

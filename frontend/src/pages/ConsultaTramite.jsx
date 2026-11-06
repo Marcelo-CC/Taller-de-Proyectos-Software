@@ -32,7 +32,7 @@ function LineaDeTiempo({ estado }) {
   );
 }
 
-export default function ConsultaTramite({ irA }) {
+export default function ConsultaTramite() {
   const [ticket, setTicket] = useState('');
   const [codigo, setCodigo] = useState('');
   const [consultando, setConsultando] = useState(false);
@@ -67,8 +67,8 @@ export default function ConsultaTramite({ irA }) {
 
   return (
     <div className="pagina">
-      <Encabezado onInicio={() => irA('inicio')} subtitulo="Consulta de Trámite">
-        <button className="boton boton-claro" onClick={() => irA('inicio')}>← Volver al inicio</button>
+      <Encabezado subtitulo="Consulta de Trámite">
+        <a className="boton boton-claro" href="#/inicio">← Volver al inicio</a>
       </Encabezado>
 
       <main className="contenedor contenedor-angosto">
@@ -102,7 +102,7 @@ export default function ConsultaTramite({ irA }) {
             </button>
             <p className="nota-centrada">
               ¿Aún no tiene un ticket?{' '}
-              <button type="button" className="enlace" onClick={() => irA('ciudadano')}>Registre un reclamo</button>
+              <a className="enlace" href="#/ciudadano">Registre un reclamo</a>
             </p>
           </form>
         ) : (
@@ -137,7 +137,7 @@ export default function ConsultaTramite({ irA }) {
 
             <div className="acciones-ticket">
               <button className="boton boton-claro" onClick={nuevaConsulta}>Consultar otro ticket</button>
-              <button className="boton boton-primario" onClick={() => irA('inicio')}>Volver al inicio</button>
+              <a className="boton boton-primario" href="#/inicio">Volver al inicio</a>
             </div>
           </section>
         )}
