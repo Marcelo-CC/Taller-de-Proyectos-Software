@@ -350,6 +350,68 @@ legend {
 
 .acciones-ticket { display: flex; gap: 12px; justify-content: flex-end; flex-wrap: wrap; }
 
+/* Código secreto del Módulo C (se muestra una sola vez en la confirmación) */
+.cuadro-codigo {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px 16px;
+  background: var(--estado-pendiente-fondo);
+  border: 1px solid #f3c77a;
+  border-left: 4px solid var(--estado-pendiente);
+  border-radius: var(--radio);
+  padding: 16px 18px;
+  margin-bottom: 20px;
+}
+.cuadro-codigo > div { display: flex; flex-direction: column; gap: 6px; }
+.cuadro-codigo p { flex-basis: 100%; font-size: 0.88rem; color: #6b4000; }
+.codigo-secreto {
+  font-family: ui-monospace, Consolas, monospace;
+  font-size: 1.7rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  color: var(--azul-900);
+  user-select: all;
+}
+
+/* ============ Módulo C: Consulta de trámite ============ */
+.modulo-c { background: var(--estado-pendiente-fondo); }
+.consulta-cabecera { margin-bottom: 22px; }
+.consulta-cabecera h1 { font-size: 1.4rem; color: var(--azul-900); margin-bottom: 6px; }
+.consulta-cabecera p { color: var(--texto-secundario); }
+.entrada-codigo { font-family: ui-monospace, Consolas, monospace; letter-spacing: 0.12em; text-transform: uppercase; }
+
+.linea-tiempo {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 10px;
+  display: flex;
+  gap: 8px;
+}
+.linea-tiempo li {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--borde);
+  border-radius: var(--radio);
+  color: var(--texto-tenue);
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+.linea-tiempo li span {
+  width: 26px; height: 26px; border-radius: 50%; flex-shrink: 0;
+  display: grid; place-items: center;
+  background: var(--fondo); border: 1px solid var(--borde-fuerte);
+}
+.linea-tiempo li.hecho { color: var(--verde); }
+.linea-tiempo li.hecho span { background: var(--verde); border-color: var(--verde); color: #fff; }
+.linea-tiempo li.activo { color: var(--azul-800); border-color: var(--azul-700); box-shadow: inset 0 -3px 0 var(--azul-700); }
+.linea-tiempo li.activo span { background: var(--azul-800); border-color: var(--azul-800); color: #fff; }
+.estado-explicacion { color: var(--texto-secundario); font-size: 0.92rem; margin-bottom: 20px; }
+
 /* ============ Insignias ============ */
 .insignia-categoria {
   display: inline-flex;
@@ -646,7 +708,7 @@ legend {
   .barra-institucional { flex-wrap: wrap; }
   .usuario-sesion span:last-child { display: none; }
   .tarjeta { padding: 20px; }
-  .pasos { flex-direction: column; }
+  .pasos, .linea-tiempo { flex-direction: column; }
   .sigem-titulo { flex-direction: column; align-items: flex-start; }
   .graficos { grid-template-columns: 1fr; }
   .pie-legal { text-align: left; }
@@ -654,7 +716,7 @@ legend {
 
 /* ============ Impresión de la constancia ============ */
 @media print {
-  .franja-superior, .acciones-encabezado, .pasos, .acciones-ticket, .pie { display: none; }
+  .franja-superior, .acciones-encabezado, .pasos, .acciones-ticket, .pie, .cuadro-codigo .boton { display: none; }
   .pagina { background: #fff; }
   .tarjeta { box-shadow: none; border: 0; }
 }

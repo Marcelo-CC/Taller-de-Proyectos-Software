@@ -21,12 +21,14 @@ export const registrarReclamo = (reclamo) =>
 // Si Supabase no está configurado o falla, se usa el backend como respaldo.
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL?.replace(/\/$/, '');
 const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+// Columnas públicas: el hash del código secreto (codigo_hash) no se puede leer por la API
+const COLUMNAS = 'id,created_at,titulo,descripcion,categoria,emisiones_gco2,consumo_kwh,estado';
 
 async function listarDesdeSupabase() {
   const filas = [];
   const lote = 1000; // Supabase devuelve como máximo 1000 filas por consulta
   for (let desde = 0; ; desde += lote) {
-    const response = await fetch(`${SUPABASE_URL}/rest/v1/reclamos?select=*&order=id.desc`, {
+    const response = await fetch(`${SUPABASE_URL}/rest/v1/reclamos?select=${COLUMNAS}&order=id.desc`, {
       headers: { apikey: SUPABASE_KEY, Range: `${desde}-${desde + lote - 1}` },
     });
     if (!response.ok) throw new Error(`Supabase respondió ${response.status}`);
@@ -70,7 +72,7 @@ const ESTADOS_VALIDOS = ['PENDIENTE', 'EN_PROCESO', 'RESUELTO'];
 export async function cambiarEstado(id, estado, token) {
   if (!ESTADOS_VALIDOS.includes(estado)) throw new Error('Estado inválido.');
   if (!token) throw new Error('Su sesión expiró. Vuelva a iniciar sesión.');
-  const response = await fetch(`${SUPABASE_URL}/rest/v1/reclamos?id=eq.${encodeURIComponent(id)}`, {
+  const response = await fetch(`${SUPABASE_URL}/rest/v1/reclamos?id=eq.${encodeURIComponent(id)}&select=${COLUMNAS}`, {
     method: 'PATCH',
     headers: {
       apikey: SUPABASE_KEY,
@@ -89,3 +91,17 @@ export async function cambiarEstado(id, estado, token) {
 }
 
 export const MLFLOW_URL = 'https://dagshub.com/Marcelo-CC/Taller-de-Proyectos-Software.mlflow/#/experiments/0';
+
+// Módulo C: el vecino consulta su trámite con el número de ticket y el código secreto.
+// La verificación ocurre dentro de Supabase (función consultar_reclamo): el hash nunca sale de la base.
+export async function consultarReclamo(ticket, codigo) {
+  if (!SUPABASE_URL || !SUPABASE_KEY) throw new Error('El servicio de consulta no está disponible.');
+  const response = await fetch(`${SUPABASE_URL}/rest/v1/rpc/consultar_reclamo`, {
+    method: 'POST',
+    headers: { apikey: SUPABASE_KEY, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ p_ticket: ticket, p_codigo: codigo }),
+  });
+  const datos = await response.json().catch(() => null);
+  if (!response.ok) throw new Error('No se pudo realizar la consulta. Intente nuevamente.');
+  return datos?.[0] || null;  // null: el ticket no existe o el código no coincide
+}

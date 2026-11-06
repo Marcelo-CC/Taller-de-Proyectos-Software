@@ -3,6 +3,7 @@ import mlflow
 from codecarbon import EmissionsTracker
 
 from src.domain.entities.reclamo import Reclamo
+from src.domain.valueObjects import codigo_consulta
 from src.domain.ports.input.registrar_reclamo_port import RegistrarReclamoPort
 from src.domain.ports.output.reclamo_repository_port import ReclamoRepositoryPort
 from src.infrastructure.adapters.output.gemini_adapter import GeminiAdapter
@@ -93,16 +94,21 @@ class RegistrarReclamoUseCase(RegistrarReclamoPort):
         except Exception as e:
             print(f"⚠️ No se pudo registrar en MLflow: {e}", flush=True)
 
-        # 7. GUARDAR EN SUPABASE
+        # 7. CÓDIGO SECRETO DE CONSULTA (Módulo C): se guarda solo su hash y se muestra una sola vez
+        codigo = codigo_consulta.generar()
+
+        # 8. GUARDAR EN SUPABASE
         respuesta_db = self.repository.guardar(
             reclamo=nuevo_reclamo,
             emisiones_gco2=emisiones_gco2,
-            consumo_kwh=consumo_kwh
+            consumo_kwh=consumo_kwh,
+            codigo_hash=codigo_consulta.hashear(codigo)
         )
 
         return {
             "db_data": respuesta_db,
             "ticket": respuesta_db[0]["id"] if respuesta_db else None,
+            "codigo_consulta": codigo,
             "titulo_anonimizado": titulo_protegido,
             "descripcion_anonimizada": descripcion_protegida,
             "emisiones_gco2": emisiones_gco2,

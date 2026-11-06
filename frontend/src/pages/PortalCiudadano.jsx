@@ -43,6 +43,7 @@ export default function PortalCiudadano({ irA }) {
   const [enviando, setEnviando] = useState(false);
   const [errorServidor, setErrorServidor] = useState('');
   const [ticket, setTicket] = useState(null);
+  const [copiado, setCopiado] = useState(false);
 
   const cambiar = (campo, filtro) => (e) => {
     const valor = filtro ? filtro(e.target.value) : e.target.value;
@@ -81,6 +82,12 @@ export default function PortalCiudadano({ irA }) {
   const nuevoReclamo = () => {
     setForm(FORMULARIO_VACIO);
     setTicket(null);
+    setCopiado(false);
+  };
+
+  const copiarCodigo = () => {
+    const texto = `Ticket ${formatoTicket(ticket.ticket)} · Código ${ticket.codigo_consulta}`;
+    navigator.clipboard?.writeText(texto).then(() => setCopiado(true)).catch(() => {});
   };
 
   return (
@@ -162,7 +169,7 @@ export default function PortalCiudadano({ irA }) {
               <span className="ticket-check" aria-hidden="true">✓</span>
               <div>
                 <h2>¡Reclamo registrado con éxito!</h2>
-                <p>Conserve su número de ticket para hacer seguimiento.</p>
+                <p>Conserve su número de ticket y su código secreto para hacer seguimiento.</p>
               </div>
             </div>
 
@@ -180,6 +187,23 @@ export default function PortalCiudadano({ irA }) {
                 <span className="insignia-estado estado-pendiente">● Pendiente</span>
               </div>
             </div>
+
+            {ticket.codigo_consulta && (
+              <div className="cuadro-codigo">
+                <div>
+                  <span className="dato-etiqueta">Código secreto de consulta</span>
+                  <span className="codigo-secreto">{ticket.codigo_consulta}</span>
+                </div>
+                <button className="boton boton-claro" onClick={copiarCodigo}>
+                  {copiado ? '✓ Copiado' : '📋 Copiar código'}
+                </button>
+                <p>
+                  <strong>⚠️ Guárdelo ahora: no se volverá a mostrar.</strong> Con su número de ticket y este código
+                  podrá consultar el estado de su trámite en el <strong>Módulo C</strong>. No lo comparta: es lo que
+                  impide que otras personas vean su reclamo.
+                </p>
+              </div>
+            )}
 
             <div className="cuadro-anonimizado">
               <h3>🔒 Así se guardó su reclamo</h3>
@@ -202,6 +226,7 @@ export default function PortalCiudadano({ irA }) {
 
             <div className="acciones-ticket">
               <button className="boton boton-claro" onClick={() => window.print()}>🖨️ Imprimir constancia</button>
+              <button className="boton boton-claro" onClick={() => irA('consulta')}>🔎 Consultar mi trámite</button>
               <button className="boton boton-primario" onClick={nuevoReclamo}>Registrar otro reclamo</button>
             </div>
           </section>

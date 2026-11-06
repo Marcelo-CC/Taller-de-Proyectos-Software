@@ -28,6 +28,17 @@ export default function Inicio({ irA }) {
           <span className="modulo-accion">Registrar un reclamo →</span>
         </button>
 
+        <button className="tarjeta-modulo" onClick={() => irA('consulta')}>
+          <span className="modulo-icono modulo-c" aria-hidden="true">🔎</span>
+          <span className="modulo-etiqueta">Módulo C · Seguimiento</span>
+          <h2>Consulta del Estado de su Trámite</h2>
+          <p>
+            Ingrese su número de ticket y su código secreto para ver en qué estado se encuentra
+            su reclamo.
+          </p>
+          <span className="modulo-accion">Consultar mi trámite →</span>
+        </button>
+
         <button className="tarjeta-modulo" onClick={() => irA('login')}>
           <span className="modulo-icono modulo-b" aria-hidden="true">🏛️</span>
           <span className="modulo-etiqueta">Módulo B · Personal Municipal</span>

@@ -3,11 +3,12 @@ import './App.css';
 import Inicio from './pages/Inicio';
 import PortalCiudadano from './pages/PortalCiudadano';
 import LoginMunicipal from './pages/LoginMunicipal';
+import ConsultaTramite from './pages/ConsultaTramite';
 
 // El SIGEM (con los gráficos) se descarga solo cuando entra el personal municipal
 const Sigem = lazy(() => import('./pages/Sigem'));
 
-const VISTAS = ['inicio', 'ciudadano', 'login', 'sigem'];
+const VISTAS = ['inicio', 'ciudadano', 'consulta', 'login', 'sigem'];
 const vistaDesdeUrl = () => {
   const vista = window.location.hash.replace('#/', '');
   return VISTAS.includes(vista) ? vista : 'inicio';
@@ -47,6 +48,7 @@ export default function App() {
   };
 
   if (vista === 'ciudadano') return <PortalCiudadano irA={irA} />;
+  if (vista === 'consulta') return <ConsultaTramite irA={irA} />;
   if (vista === 'sigem' && sesion) {
     return (
       <Suspense fallback={<div className="cargando-bloque"><span className="girando" /> Cargando SIGEM…</div>}>

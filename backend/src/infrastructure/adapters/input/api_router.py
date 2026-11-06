@@ -58,6 +58,7 @@ def crear_reclamo(
             "message": "Reclamo registrado exitosamente.",
             "data": resultado["db_data"],
             "ticket": resultado["ticket"],
+            "codigo_consulta": resultado["codigo_consulta"],
             "categoria_asignada": resultado.get("categoria_detectada"),
             "titulo_anonimizado": resultado["titulo_anonimizado"],
             "descripcion_anonimizada": resultado["descripcion_anonimizada"],
