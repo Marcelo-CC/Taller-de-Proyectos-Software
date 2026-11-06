@@ -1,14 +1,11 @@
 import { colorCategoria, ESTADOS, ESTADO_AUDITORIA } from '../constantes';
 
+// Escudo de la Municipalidad Provincial de Huancayo (public/escudo-huancayo.png, proporción 138:160).
+// `tamano` es la altura en píxeles; el ancho se calcula para no deformarlo.
 export function Escudo({ tamano = 44 }) {
   return (
-    <svg width={tamano} height={tamano} viewBox="0 0 48 48" aria-hidden="true">
-      <path d="M24 3 41 9v14c0 11-7.4 19-17 22C14.4 42 7 34 7 23V9z" fill="#0b3a6b" />
-      <path d="M24 7.5 37 12v11c0 8.7-5.6 15-13 17.6C16.6 38 11 31.7 11 23V12z" fill="#fff" />
-      <path d="M14 30 21 20l4 5 3-4 6 9z" fill="#1baf7a" />
-      <circle cx="30" cy="16" r="2.6" fill="#eda100" />
-      <rect x="11" y="30" width="26" height="3" fill="#c8102e" />
-    </svg>
+    <img src="/escudo-huancayo.png" alt="" aria-hidden="true"
+      height={tamano} width={Math.round((tamano * 138) / 160)} />
   );
 }
 
