@@ -83,7 +83,7 @@ Ver `backend/.env.example`. Las claves **nunca** se escriben en el código: se c
 
 ## 📄 Documentación de calidad y seguridad
 
-La carpeta `docs/` contiene la auditoría FURPS+, la auditoría OWASP Top 10, sus planes de mejora y las verificaciones de implementación.
+La carpeta `docs/` contiene la auditoría FURPS+, la auditoría OWASP Top 10, sus planes de mejora y las verificaciones de implementación (documentos 01 a 07, en el orden en que se aplicaron los prompts). El documento `08_auditoria_final_cierre.md` repite el dictamen final sobre el sistema terminado: **matriz FURPS+ al 100 %, OWASP 85 y apto para producción**.
 
 **Guía rápida de usuario:** [`docs/GUIA_RAPIDA_USUARIO.md`](docs/GUIA_RAPIDA_USUARIO.md) (también dentro del portal, en «¿Cómo usar?»).
 
