@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { InsigniaCategoria, InsigniaEstado, TextoAnonimizado } from '../../components/Layout';
 import { CATEGORIAS, ESTADOS, formatoFecha, formatoTicket } from '../../constantes';
 
-const POR_PAGINA = 12;
+const POR_PAGINA = 25;
 
 // HITL: alerta bajo la categoría cuando la confianza de la IA no alcanza el umbral (70 %)
 function AlertaConfianza({ confianza }) {
@@ -70,11 +70,9 @@ export default function TablaReclamos({ reclamos, onCambiarEstado, onAuditar, ac
                 <td className="celda-ticket">{formatoTicket(r.id)}</td>
                 <td className="celda-fecha">{formatoFecha(r.created_at)}</td>
                 <td className="celda-titulo"><TextoAnonimizado texto={r.titulo} resaltar={resaltar} /></td>
-                <td>
-                  <div className="celda-apilada">
-                    <InsigniaCategoria categoria={r.categoria} />
-                    {r.requiere_auditoria && <AlertaConfianza confianza={r.confianza} />}
-                  </div>
+                <td className="celda-categoria">
+                  <InsigniaCategoria categoria={r.categoria} />
+                  {r.requiere_auditoria && <AlertaConfianza confianza={r.confianza} />}
                 </td>
                 <td className="celda-texto">
                   <div className={expandido === r.id ? '' : 'texto-recortado'}>
@@ -88,7 +86,7 @@ export default function TablaReclamos({ reclamos, onCambiarEstado, onAuditar, ac
                   {r.requiere_auditoria ? (
                     <AccionAuditoria reclamo={r} onAuditar={onAuditar} ocupado={actualizando === r.id} />
                   ) : (
-                    <div className="celda-apilada">
+                    <>
                       <InsigniaEstado estado={r.estado} />
                       <select
                         aria-label={`Cambiar estado del ticket ${formatoTicket(r.id)}`}
@@ -100,7 +98,7 @@ export default function TablaReclamos({ reclamos, onCambiarEstado, onAuditar, ac
                           <option key={valor} value={valor}>{e.etiqueta}</option>
                         ))}
                       </select>
-                    </div>
+                    </>
                   )}
                 </td>
               </tr>

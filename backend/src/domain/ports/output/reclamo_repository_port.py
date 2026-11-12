@@ -11,5 +11,10 @@ class ReclamoRepositoryPort(ABC):
         pass
 
     @abstractmethod
+    def listar_pagina(self, desde: int, cantidad: int):
+        """Devuelve (filas, total): `cantidad` reclamos desde la posición `desde` (más recientes primero)."""
+        pass
+
+    @abstractmethod
     def actualizar_estado(self, reclamo_id: int, estado: str):
         pass

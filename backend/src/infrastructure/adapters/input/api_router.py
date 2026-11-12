@@ -2,7 +2,7 @@ import logging
 import uuid
 from typing import Optional
 
-from fastapi import APIRouter, HTTPException, Depends, Request
+from fastapi import APIRouter, HTTPException, Depends, Query, Request
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 
 from src.application.useCases.registrar_reclamo_use_case import RegistrarReclamoUseCase
@@ -122,11 +122,16 @@ def crear_reclamo(
 # Módulo B: Portal Operativo Interno (SIGEM)
 @router.get("/api/reclamos")
 def listar_reclamos(
+    pagina: Optional[int] = Query(None, ge=1, description="Página (desde 1). Sin este parámetro se devuelven todos."),
+    por_pagina: int = Query(25, ge=1, le=100, description="Reclamos por página (máximo 100)."),
     usuario: str = Depends(usuario_autenticado),
     use_case: GestionarReclamosUseCase = Depends(get_gestion_use_case)
 ):
     try:
-        return {"status": "success", "data": use_case.listar()}
+        if pagina is None:
+            # Respuesta de siempre: se mantiene para no romper a quien ya consume la API
+            return {"status": "success", "data": use_case.listar()}
+        return {"status": "success", **use_case.listar_pagina(pagina, por_pagina)}
     except Exception as e:
         raise error_interno("listar reclamos", e)
 

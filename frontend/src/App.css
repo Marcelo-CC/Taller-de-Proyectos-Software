@@ -448,9 +448,7 @@ legend {
 .estado-auditoria { color: var(--hitl-texto); background: var(--hitl-fondo); }
 
 /* ============ HITL: revisión humana de la clasificación de la IA ============ */
-/* Contenido apilado dentro de una celda: el flex va en un div, nunca en el <td>,
-   para que la celda siga siendo celda de tabla y su borde se alinee con el resto de la fila */
-.celda-apilada { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; }
+.celda-categoria { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; }
 .alerta-confianza {
   display: inline-block;
   background: var(--hitl-fondo);
@@ -594,7 +592,7 @@ legend {
   overflow: hidden;
 }
 .celda-texto .enlace { margin-top: 4px; font-size: 0.78rem; }
-.celda-estado { min-width: 140px; }
+.celda-estado { display: flex; flex-direction: column; gap: 8px; align-items: flex-start; min-width: 140px; }
 .celda-estado select {
   padding: 6px 8px;
   border: 1px solid var(--borde-fuerte);
@@ -740,6 +738,38 @@ legend {
   .graficos { grid-template-columns: 1fr; }
   .pie-legal { text-align: left; }
 }
+
+/* ============ Guía rápida de usuario ============ */
+.guia h1 { color: var(--azul-900); margin: 0 0 8px; }
+.guia-intro { color: var(--texto-secundario); margin: 0 0 16px; }
+.guia-indice { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; }
+.guia-indice a { font-weight: 600; }
+.guia-seccion { margin-bottom: 16px; }
+.guia-seccion h2 { font-size: 1.15rem; color: var(--azul-900); margin: 0 0 12px; }
+.guia-pasos { list-style: none; padding: 0; margin: 0; display: grid; gap: 10px; }
+.guia-paso { display: flex; gap: 12px; align-items: flex-start; padding: 10px 12px; border-radius: 8px; background: var(--azul-50, #eef4fb); }
+.guia-paso p { margin: 4px 0 0; color: var(--texto-secundario); }
+.guia-alerta { background: #fff4e0; border-left: 4px solid #eda100; }
+.guia-numero {
+  flex: none; width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center;
+  background: var(--azul-800); color: #fff; font-weight: 700; font-size: 0.9rem;
+}
+.guia-botones { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 14px; }
+.guia-estados { margin: 0; display: grid; gap: 8px; }
+.guia-estados div { display: grid; grid-template-columns: 230px 1fr; gap: 12px; }
+.guia-estados dt { font-weight: 700; }
+.guia-estados dd { margin: 0; color: var(--texto-secundario); }
+@media (max-width: 640px) { .guia-estados div { grid-template-columns: 1fr; gap: 2px; } }
+.enlace-guia { text-align: center; color: var(--texto-secundario); margin-top: 0; }
+
+/* ============ Exportación de reportes (Dashboard Green AI) ============ */
+.exportar-reporte {
+  display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;
+  background: #fff; border: 1px solid var(--borde, #e1e0d9); border-radius: 10px; padding: 14px 18px; margin-bottom: 16px;
+}
+.exportar-reporte strong { display: block; }
+.exportar-reporte span { font-size: 0.9rem; color: #52514e; }
+.exportar-botones { display: flex; gap: 8px; flex-wrap: wrap; }
 
 /* ============ Impresión de la constancia ============ */
 @media print {

@@ -84,3 +84,9 @@ Ver `backend/.env.example`. Las claves **nunca** se escriben en el código: se c
 ## 📄 Documentación de calidad y seguridad
 
 La carpeta `docs/` contiene la auditoría FURPS+, la auditoría OWASP Top 10, sus planes de mejora y las verificaciones de implementación.
+
+**Guía rápida de usuario:** [`docs/GUIA_RAPIDA_USUARIO.md`](docs/GUIA_RAPIDA_USUARIO.md) (también dentro del portal, en «¿Cómo usar?»).
+
+**Paginación de la API:** `GET /api/reclamos?pagina=1&por_pagina=25` devuelve una página y el total (`paginacion`). Sin `pagina` responde la lista completa, como antes.
+
+**Dependencias:** Dependabot revisa las librerías cada semana (`.github/dependabot.yml`) y el flujo «Calidad y seguridad» bloquea los cambios si hay vulnerabilidades conocidas.

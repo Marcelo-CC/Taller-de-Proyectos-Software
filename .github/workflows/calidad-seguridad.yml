@@ -1,9 +1,11 @@
 # Integración continua (OWASP A08 / A06): pruebas y análisis de dependencias en cada cambio.
+# Si se publica una vulnerabilidad en una librería usada, el pull request queda en rojo hasta actualizarla
+# (Dependabot propone la actualización: .github/dependabot.yml).
 name: Calidad y seguridad
 
 on:
   push:
-    branches: [main, mejoras-semana13]
+    branches: [main]
   pull_request:
 
 permissions:
@@ -25,8 +27,7 @@ jobs:
         run: pip install -r requirements-dev.txt
       - name: Pruebas automatizadas (bloquean si fallan)
         run: pytest -v
-      - name: Vulnerabilidades conocidas en dependencias de Python (informativo)
-        continue-on-error: true
+      - name: Vulnerabilidades conocidas en dependencias de Python (bloquea si hay)
         run: |
           pip install pip-audit
           pip-audit -r requirements.txt
@@ -46,6 +47,5 @@ jobs:
         run: npm ci
       - name: Compilar (bloquea si falla)
         run: npm run build
-      - name: Vulnerabilidades conocidas en dependencias de npm (informativo)
-        continue-on-error: true
-        run: npm audit --audit-level=high
+      - name: Vulnerabilidades altas o críticas en dependencias de producción de npm (bloquea si hay)
+        run: npm audit --omit=dev --audit-level=high
