@@ -5,6 +5,7 @@ import {
 } from 'recharts';
 import { CATEGORIAS, formatoFecha, formatoTicket } from '../../constantes';
 import { MLFLOW_URL } from '../../services/api';
+import { exportarCsv, exportarPdf } from '../../services/exportar';
 
 const TINTA = { primaria: '#0b0b0b', secundaria: '#52514e', rejilla: '#e1e0d9' };
 const SERIE = '#2a78d6';
@@ -54,6 +55,21 @@ export default function DashboardGreenAI({ reclamos }) {
 
   return (
     <section className="dashboard">
+      <div className="exportar-reporte">
+        <div>
+          <strong>Reporte de sostenibilidad</strong>
+          <span>Descargue los {reclamos.length.toLocaleString('es-PE')} reclamos con su consumo de energía y emisiones.</span>
+        </div>
+        <div className="exportar-botones">
+          <button className="boton boton-claro" onClick={() => exportarCsv(reclamos)} disabled={!reclamos.length}>
+            ⬇ Descargar CSV (Excel)
+          </button>
+          <button className="boton boton-primario" onClick={() => exportarPdf(reclamos)} disabled={!reclamos.length}>
+            🖨 Reporte PDF
+          </button>
+        </div>
+      </div>
+
       <div className="kpis">
         <TarjetaKpi titulo="Reclamos procesados por la IA" valor={reclamos.length.toLocaleString('es-PE')} />
         <TarjetaKpi titulo="Consumo energético acumulado" valor={numero(totalKwh, 4)} unidad="kWh"

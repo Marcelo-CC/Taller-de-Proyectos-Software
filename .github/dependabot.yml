@@ -1,0 +1,28 @@
+# OWASP A06 (componentes vulnerables): GitHub revisa cada semana las librerías del proyecto y abre
+# un pull request cuando hay una versión que corrige una vulnerabilidad o una actualización disponible.
+# Cada pull request pasa por el flujo «Calidad y seguridad» antes de poder unirse a main.
+version: 2
+updates:
+  - package-ecosystem: "pip"
+    directory: "/backend"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      timezone: "America/Lima"
+    open-pull-requests-limit: 5
+
+  - package-ecosystem: "npm"
+    directory: "/frontend"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      timezone: "America/Lima"
+    open-pull-requests-limit: 5
+    groups:
+      menores-frontend:
+        update-types: ["minor", "patch"]
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "monthly"

@@ -79,6 +79,7 @@ export default function Sigem({ sesion, onSalir }) {
           <span className="avatar" aria-hidden="true">{sesion.nombre[0]}</span>
           <span><strong>{sesion.nombre}</strong><small>Rol: {sesion.rol}</small></span>
         </div>
+        <a className="boton boton-claro" href="#/guia" target="_blank" rel="noreferrer">❓ Guía</a>
         <button className="boton boton-claro" onClick={onSalir}>Cerrar sesión</button>
       </Encabezado>
 

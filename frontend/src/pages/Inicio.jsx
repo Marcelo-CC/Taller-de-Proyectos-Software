@@ -3,7 +3,9 @@ import { Encabezado, PiePagina } from '../components/Layout';
 export default function Inicio() {
   return (
     <div className="pagina">
-      <Encabezado subtitulo="Portal de Atención Vecinal" />
+      <Encabezado subtitulo="Portal de Atención Vecinal">
+        <a className="boton boton-claro" href="#/guia">❓ ¿Cómo usar?</a>
+      </Encabezado>
 
       <section className="hero">
         <div className="hero-contenido">
@@ -56,6 +58,10 @@ export default function Inicio() {
         <div><strong>⚡ Clasificación automática</strong><span>La IA asigna la categoría y deriva el reclamo al área correcta.</span></div>
         <div><strong>🌱 Green AI</strong><span>Cada inferencia mide su consumo energético y emisiones de CO₂.</span></div>
       </section>
+
+      <p className="contenedor enlace-guia">
+        ¿Primera vez? Lea la <a href="#/guia">guía rápida de usuario</a>: registrar, consultar y atender reclamos en pocos pasos.
+      </p>
 
       <PiePagina />
     </div>

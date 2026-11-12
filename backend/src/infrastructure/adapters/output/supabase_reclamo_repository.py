@@ -34,6 +34,12 @@ class SupabaseReclamoRepository(ReclamoRepositoryPort):
                 return filas
             desde += lote
 
+    def listar_pagina(self, desde: int, cantidad: int):
+        # Una sola consulta: la página pedida y el total de reclamos (count="exact")
+        response = (self.supabase.table("reclamos").select(COLUMNAS, count="exact")
+                    .order("id", desc=True).range(desde, desde + cantidad - 1).execute())
+        return response.data, (response.count if response.count is not None else len(response.data))
+
     def actualizar_estado(self, reclamo_id: int, estado: str):
         response = (self.supabase.table("reclamos").update({"estado": estado})
                     .eq("id", reclamo_id).select(COLUMNAS).execute())

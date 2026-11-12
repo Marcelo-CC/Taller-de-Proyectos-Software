@@ -19,6 +19,10 @@ class RepositorioFalso:
     def listar(self):
         return list(self.guardados)
 
+    def listar_pagina(self, desde, cantidad):
+        ordenados = sorted(self.guardados, key=lambda f: f["id"], reverse=True)
+        return ordenados[desde:desde + cantidad], len(ordenados)
+
     def actualizar_estado(self, reclamo_id, estado):
         for fila in self.guardados:
             if fila["id"] == reclamo_id:
