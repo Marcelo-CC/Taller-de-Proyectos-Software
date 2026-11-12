@@ -448,7 +448,9 @@ legend {
 .estado-auditoria { color: var(--hitl-texto); background: var(--hitl-fondo); }
 
 /* ============ HITL: revisión humana de la clasificación de la IA ============ */
-.celda-categoria { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; }
+/* Contenido apilado dentro de una celda: el flex va en un div, nunca en el <td>,
+   para que la celda siga siendo celda de tabla y su borde se alinee con el resto de la fila */
+.celda-apilada { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; }
 .alerta-confianza {
   display: inline-block;
   background: var(--hitl-fondo);
@@ -592,7 +594,7 @@ legend {
   overflow: hidden;
 }
 .celda-texto .enlace { margin-top: 4px; font-size: 0.78rem; }
-.celda-estado { display: flex; flex-direction: column; gap: 8px; align-items: flex-start; min-width: 140px; }
+.celda-estado { min-width: 140px; }
 .celda-estado select {
   padding: 6px 8px;
   border: 1px solid var(--borde-fuerte);
