@@ -1,6 +1,8 @@
 import os
 import re
 import json
+import unicodedata
+from difflib import SequenceMatcher
 from google import genai
 from google.genai import types
 
@@ -14,6 +16,11 @@ PALABRAS_CLAVE = {
                            "riego"],
     "Alumbrado": ["alumbrado", "poste", "foco", "luz", "luminaria", "oscuro", "apagado"],
 }
+
+# Palabras comunes que por sí solas no identifican a nadie: no deben quedar enmascaradas
+PALABRAS_GENERICAS = ["casa", "vivienda", "hogar", "domicilio", "barrio", "cuadra", "calle", "vecindario",
+                      "edificio", "departamento", "local", "tienda", "negocio", "puerta", "esquina"]
+MARCADOR_DATOS = "[DATOS_PROTEGIDOS]"
 
 
 class GeminiAdapter:
@@ -63,6 +70,8 @@ class GeminiAdapter:
            - Reemplaza DNI o números de documento por [DNI_PROTEGIDO].
            - Reemplaza teléfonos, correos o referencias exactas de domicilio personal por [DATOS_PROTEGIDOS].
            - Conserva los marcadores que ya vengan entre corchetes.
+           - NO enmascares palabras comunes como "mi casa", "mi barrio" o "mi cuadra" cuando no van
+             acompañadas de una dirección exacta: no identifican a nadie.
            - La "ubicacion" es el lugar público del problema (calle, esquina, parque): NO la enmascares.
 
         2. CORRECCIÓN DE REDACCIÓN: Corrige la ortografía, tildes, puntuación y gramática del título,
@@ -70,6 +79,8 @@ class GeminiAdapter:
            - Mantén la persona gramatical original (si el vecino escribe en primera persona, se queda así).
            - NO cambies el significado, NO agregues hechos nuevos y NO elimines detalles del problema
              (lugares, calles, fechas, duración, etc.).
+           - Conserva TODAS las oraciones y TODOS los problemas que menciona el vecino, aunque sean varios;
+             la descripción corregida debe tener la misma información que la original, solo mejor escrita.
            - Los nombres de calles y avenidas se conservan, solo corrige su escritura (ej. "jr wayra" -> "Jr. Wayra").
 
         3. CLASIFICACIÓN: Asigna el reclamo a EXACTAMENTE UNA de las siguientes 4 categorías oficiales:
@@ -103,9 +114,9 @@ class GeminiAdapter:
                 json_text = response.text.replace("```json", "").replace("```", "").strip()
                 data = json.loads(json_text)
 
-                titulo_ia = data.get("titulo") or titulo
-                ubicacion_ia = data.get("ubicacion") or ubicacion
-                descripcion_ia = data.get("descripcion") or descripcion
+                titulo_ia = self._revisar_correccion(titulo, data.get("titulo") or titulo)
+                ubicacion_ia = self._restaurar_genericas(ubicacion, data.get("ubicacion") or ubicacion)
+                descripcion_ia = self._revisar_correccion(descripcion, data.get("descripcion") or descripcion)
                 categoria = self._normalizar_categoria(data.get("categoria")) or "Vías Públicas"
                 senales = {
                     "probabilidades": self._leer_probabilidades(data.get("probabilidades")),
@@ -125,6 +136,56 @@ class GeminiAdapter:
         texto = f"{titulo} {ubicacion} {descripcion}"
         return (self._limpiar(titulo), self._limpiar(ubicacion), self._limpiar(descripcion),
                 self._clasificar_local(texto), self._senales_local(texto))
+
+    @classmethod
+    def _revisar_correccion(cls, original: str, corregido: str) -> str:
+        """Controles sobre el texto que devuelve Gemini:
+        1) Devuelve las palabras comunes ("mi casa") que la IA tapó sin necesidad.
+        2) Si la IA recortó el texto (perdió parte del contenido) y no agregó marcadores nuevos de
+           anonimización, se guarda el texto original con la anonimización local. Si sí agregó
+           marcadores (detectó datos personales), se respeta su versión: primero la privacidad."""
+        corregido = cls._restaurar_genericas(original, corregido)
+        if cls._conserva_contenido(original, corregido):
+            return corregido
+        if cls._contar_marcadores(corregido) > cls._contar_marcadores(original):
+            return corregido
+        print("⚠️ La corrección de Gemini omitió parte del reclamo. Se conserva el texto original.", flush=True)
+        return original
+
+    @staticmethod
+    def _contar_marcadores(texto: str) -> int:
+        return len(re.findall(r"\[[A-ZÁÉÍÓÚÑ_]+\]", texto or ""))
+
+    @staticmethod
+    def _restaurar_genericas(original: str, corregido: str) -> str:
+        """Si el original decía "mi casa" y la IA escribió "mi [DATOS_PROTEGIDOS]", se devuelve "mi casa".
+        Solo se reponen palabras de PALABRAS_GENERICAS, nunca una dirección ni un nombre."""
+        genericas = "|".join(PALABRAS_GENERICAS)
+        for m in re.finditer(rf"(?i)\b(mi|mis|su|sus|nuestra|nuestro|nuestras|nuestros)\s+({genericas})\b", original or ""):
+            patron = rf"(?i)\b({m.group(1)})\s+{re.escape(MARCADOR_DATOS)}"
+            corregido = re.sub(patron, lambda r: f"{r.group(1)} {m.group(2)}", corregido, count=1)
+        return corregido
+
+    @staticmethod
+    def _palabras(texto: str) -> list:
+        # Palabras de 4 letras o más, sin tildes ni marcadores, para comparar original y corregido
+        texto = re.sub(r"\[[^\]]*\]", " ", texto or "")
+        texto = "".join(c for c in unicodedata.normalize("NFD", texto.lower()) if unicodedata.category(c) != "Mn")
+        return re.findall(r"[a-z]{4,}", texto)
+
+    @classmethod
+    def _conserva_contenido(cls, original: str, corregido: str, minimo: float = 0.85) -> bool:
+        """True si el corregido mantiene al menos el 85 % de las palabras del original.
+        Una palabra cuenta como presente si aparece igual o con la ortografía corregida (similitud ≥ 0,75)."""
+        palabras = cls._palabras(original)
+        if len(palabras) < 4:
+            return True
+        disponibles = set(cls._palabras(corregido))
+
+        def presente(p):
+            return p in disponibles or any(SequenceMatcher(None, p, c).ratio() >= 0.75 for c in disponibles)
+
+        return sum(presente(p) for p in palabras) / len(palabras) >= minimo
 
     @staticmethod
     def _normalizar_categoria(nombre) -> str:
@@ -179,7 +240,7 @@ class GeminiAdapter:
         texto = re.sub(r"(?<!\d)(?:\+?51\s?)?9\d{2}[\s-]?\d{3}[\s-]?\d{3}(?!\d)", "[DATOS_PROTEGIDOS]", texto)
         texto = re.sub(r"(?<!\d)\d{8}(?!\d)", "[DNI_PROTEGIDO]", texto)
         texto = re.sub(rf"(?i:\b(soy|me llamo|mi nombre es)\s+){nombre}", r"\1 [CIUDADANO_ANÓNIMO]", texto)
-        texto = re.sub(r"(?i:\b(domiciliad[oa] en|vivo en|mi casa (?:queda |está |esta )?en)\s+)[^.,;\n]+",
+        texto = re.sub(r"(?i:\b(domiciliad[oa] en|vivo en|mi casa (?:queda |está |esta )?en)\s+)(?:(?i:\b(?:jr|av|ca|cl|psje|pje|prol|urb|mz|lt|nro|n°|int|dpto|block|sect?))\.\s*|[^.,;\n])+",
                        r"\1 [DATOS_PROTEGIDOS]", texto)
         return texto
 
