@@ -1,0 +1,51 @@
+# Integración continua (OWASP A08 / A06): pruebas y análisis de dependencias en cada cambio.
+name: Calidad y seguridad
+
+on:
+  push:
+    branches: [main, mejoras-semana13]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  backend:
+    name: Backend · pruebas y dependencias
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Instalar dependencias
+        run: pip install -r requirements-dev.txt
+      - name: Pruebas automatizadas (bloquean si fallan)
+        run: pytest -v
+      - name: Vulnerabilidades conocidas en dependencias de Python (informativo)
+        continue-on-error: true
+        run: |
+          pip install pip-audit
+          pip-audit -r requirements.txt
+
+  frontend:
+    name: Frontend · build y dependencias
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Instalar dependencias
+        run: npm ci
+      - name: Compilar (bloquea si falla)
+        run: npm run build
+      - name: Vulnerabilidades conocidas en dependencias de npm (informativo)
+        continue-on-error: true
+        run: npm audit --audit-level=high

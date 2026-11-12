@@ -1,10 +1,31 @@
+import logging
+import uuid
 from typing import Optional
-from fastapi import APIRouter, HTTPException, Depends
-from pydantic import BaseModel
+
+from fastapi import APIRouter, HTTPException, Depends, Request
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 
 from src.application.useCases.registrar_reclamo_use_case import RegistrarReclamoUseCase
 from src.application.useCases.gestionar_reclamos_use_case import GestionarReclamosUseCase
 from src.infrastructure.adapters.output.supabase_reclamo_repository import SupabaseReclamoRepository
+from src.infrastructure.adapters.input.dtos import ReclamoDTO, EstadoDTO
+from src.infrastructure.security import autenticacion, limitador
+
+logger = logging.getLogger("api.reclamos")
+# Bitácora de seguridad (OWASP A09): accesos denegados, abusos y cambios hechos por el personal
+auditoria = logging.getLogger("auditoria")
+
+
+def error_interno(operacion: str, error: Exception) -> HTTPException:
+    """Registra el detalle técnico en el servidor y devuelve al cliente solo un mensaje genérico
+    con un código de incidente para poder rastrearlo en los logs de Render."""
+    incidente = uuid.uuid4().hex[:8].upper()
+    logger.error("Incidente %s en %s: %s", incidente, operacion, error, exc_info=error)
+    return HTTPException(
+        status_code=500,
+        detail=f"No se pudo completar la operación. Intente nuevamente (código de incidente {incidente}).",
+    )
+
 
 router = APIRouter()
 
@@ -20,19 +41,42 @@ def get_gestion_use_case(repository: SupabaseReclamoRepository = Depends(get_rep
     return GestionarReclamosUseCase(repository)
 
 
-class ReclamoDTO(BaseModel):
-    titulo: str
-    descripcion: str
-    categoria: Optional[str] = None  # Permite recibir valor nulo/ausente desde React sin arrojar 422
-    ubicacion: Optional[str] = ""
-    # Datos personales: se enmascaran en el backend y nunca se envían a Gemini
-    dni: Optional[str] = ""
-    nombre: Optional[str] = ""
-    direccion: Optional[str] = ""
-    contacto: Optional[str] = ""
+# Seguridad (OWASP A01/A07): las rutas del SIGEM exigen el token de Supabase Auth del operador.
+# auto_error=False para responder con un mensaje propio en español; Swagger muestra el botón "Authorize".
+esquema_bearer = HTTPBearer(auto_error=False)
 
-class EstadoDTO(BaseModel):
-    estado: str
+
+def usuario_autenticado(
+    credenciales: Optional[HTTPAuthorizationCredentials] = Depends(esquema_bearer),
+) -> str:
+    if not autenticacion.auth_obligatoria():
+        return "sin-verificacion"
+    from main import supabase
+    try:
+        return autenticacion.verificar_usuario(supabase, credenciales.credentials if credenciales else None)
+    except autenticacion.NoAutorizado as e:
+        auditoria.warning("Acceso denegado a la API interna: %s", e)
+        raise HTTPException(
+            status_code=401,
+            detail="Debe iniciar sesión como personal municipal para usar esta función.",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+
+# Seguridad (OWASP A04): límite de registros por minuto para el endpoint público
+limitador_registro = limitador.desde_entorno()
+
+
+def limitar_registro(request: Request) -> str:
+    ip = limitador.ip_del_cliente(request.headers.get("x-forwarded-for", ""),
+                                  request.client.host if request.client else "")
+    if not limitador_registro.permitir(ip):
+        auditoria.warning("Límite de solicitudes superado al registrar reclamos desde %s", ip)
+        raise HTTPException(
+            status_code=429,
+            detail="Se recibieron demasiados reclamos seguidos desde su conexión. Espere un minuto e intente nuevamente.",
+        )
+    return ip
 
 
 # Módulo A: Portal Ciudadano
@@ -40,6 +84,7 @@ class EstadoDTO(BaseModel):
 @router.post("/api/reclamos")
 def crear_reclamo(
     dto: ReclamoDTO,
+    ip: str = Depends(limitar_registro),
     use_case: RegistrarReclamoUseCase = Depends(get_use_case)
 ):
     try:
@@ -71,29 +116,35 @@ def crear_reclamo(
             }
         }
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error en el servidor: {str(e)}")
+        raise error_interno("registrar reclamo", e)
 
 
 # Módulo B: Portal Operativo Interno (SIGEM)
 @router.get("/api/reclamos")
-def listar_reclamos(use_case: GestionarReclamosUseCase = Depends(get_gestion_use_case)):
+def listar_reclamos(
+    usuario: str = Depends(usuario_autenticado),
+    use_case: GestionarReclamosUseCase = Depends(get_gestion_use_case)
+):
     try:
         return {"status": "success", "data": use_case.listar()}
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error en el servidor: {str(e)}")
+        raise error_interno("listar reclamos", e)
 
 
 @router.patch("/api/reclamos/{reclamo_id}/estado")
 def cambiar_estado(
     reclamo_id: int,
     dto: EstadoDTO,
+    usuario: str = Depends(usuario_autenticado),
     use_case: GestionarReclamosUseCase = Depends(get_gestion_use_case)
 ):
     try:
-        return {"status": "success", "data": use_case.cambiar_estado(reclamo_id, dto.estado)}
+        actualizado = use_case.cambiar_estado(reclamo_id, dto.estado)
+        auditoria.info("Reclamo %s cambiado a %s por %s", reclamo_id, dto.estado, usuario)
+        return {"status": "success", "data": actualizado}
     except ValueError:
         raise HTTPException(status_code=422, detail="Estado inválido. Use PENDIENTE, EN_PROCESO o RESUELTO.")
     except LookupError as e:
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error en el servidor: {str(e)}")
+        raise error_interno("cambiar estado", e)
