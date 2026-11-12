@@ -22,10 +22,10 @@ export default function Sigem({ sesion, onSalir }) {
 
   // El estado solo se actualiza cuando responde el servidor
   const traer = useCallback(() =>
-    listarReclamos()
+    listarReclamos(sesion.token)
       .then((datos) => { setReclamos(datos); setError(''); })
       .catch((err) => setError(err.message || 'No se pudo cargar la lista de reclamos.'))
-      .finally(() => setCargando(false)), []);
+      .finally(() => setCargando(false)), [sesion.token]);
 
   useEffect(() => { traer(); }, [traer]);
 

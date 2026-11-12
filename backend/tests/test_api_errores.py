@@ -18,7 +18,8 @@ class CasoQueFalla:
 
 def test_error_interno_no_expone_detalles_tecnicos(caplog):
     with pytest.raises(HTTPException) as error:
-        api_router.crear_reclamo(ReclamoDTO(titulo="Bache", descripcion="Hay un bache"), CasoQueFalla())
+        api_router.crear_reclamo(ReclamoDTO(titulo="Bache", descripcion="Hay un bache"), ip="190.1.1.1",
+                                 use_case=CasoQueFalla())
     assert error.value.status_code == 500
     assert "secreta" not in error.value.detail and "db.interna" not in error.value.detail
     assert "código de incidente" in error.value.detail

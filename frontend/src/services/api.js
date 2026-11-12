@@ -57,7 +57,8 @@ export async function iniciarSesion(email, password) {
   return { email: datos.user.email, token: datos.access_token, expira: datos.expires_at };
 }
 
-export async function listarReclamos() {
+// `token`: sesión del operador del SIGEM. El respaldo por backend exige ese token (OWASP A01).
+export async function listarReclamos(token) {
   if (SUPABASE_URL && SUPABASE_KEY) {
     try {
       return await listarDesdeSupabase();
@@ -65,7 +66,9 @@ export async function listarReclamos() {
       console.warn('No se pudo leer de Supabase, se usa el backend:', err.message);
     }
   }
-  return solicitar('/api/reclamos').then((r) => r.data);
+  const autorizacion = token ? { Authorization: `Bearer ${token}` } : {};
+  return solicitar('/api/reclamos', { headers: { 'Content-Type': 'application/json', ...autorizacion } })
+    .then((r) => r.data);
 }
 
 // Los cambios del operador van directo a Supabase con el token de su sesión (HU-04 y HITL).
