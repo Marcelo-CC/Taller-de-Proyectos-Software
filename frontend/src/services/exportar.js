@@ -11,7 +11,7 @@ const etiquetaEstado = (r) => {
 const celdaCsv = (valor) => {
   let texto = valor == null ? '' : String(valor);
   if (/^[=+\-@\t\r]/.test(texto)) texto = `'${texto}`;
-  return /[",\n\r]/.test(texto) ? `"${texto.replace(/"/g, '""')}"` : texto;
+  return /[";\n\r]/.test(texto) ? `"${texto.replace(/"/g, '""')}"` : texto;
 };
 
 const fechaArchivo = () => new Date().toISOString().slice(0, 10);
@@ -25,6 +25,11 @@ function descargar(contenido, nombre, tipo) {
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
+// Excel en español separa columnas con «;» y usa coma decimal: así cada dato cae en su columna y los números
+// quedan como números (se pueden sumar y graficar).
+const SEPARADOR = ';';
+const decimal = (valor, decimales) => (Number(valor) || 0).toFixed(decimales).replace('.', ',');
+
 // CSV con una fila por reclamo. No incluye el texto del reclamo: solo datos de gestión y de huella ambiental.
 export function exportarCsv(reclamos) {
   const encabezado = ['Ticket', 'Fecha', 'Categoría', 'Estado', 'Confianza IA (%)', 'Energía (kWh)', 'Emisiones (gCO2e)'];
@@ -36,10 +41,10 @@ export function exportarCsv(reclamos) {
       r.categoria,
       etiquetaEstado(r),
       r.confianza == null ? '' : Math.round(Number(r.confianza) * 100),
-      Number(r.consumo_kwh) || 0,
-      Number(r.emisiones_gco2) || 0,
+      decimal(r.consumo_kwh, 8),
+      decimal(r.emisiones_gco2, 6),
     ]);
-  const csv = [encabezado, ...filas].map((fila) => fila.map(celdaCsv).join(',')).join('\r\n');
+  const csv = [encabezado, ...filas].map((fila) => fila.map(celdaCsv).join(SEPARADOR)).join('\r\n');
   // BOM: Excel reconoce UTF-8 y muestra bien las tildes
   descargar(`﻿${csv}`, `reporte_sostenibilidad_${fechaArchivo()}.csv`, 'text/csv;charset=utf-8');
 }
