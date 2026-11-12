@@ -1,3 +1,4 @@
+import logging
 import os
 import dagshub
 import mlflow
@@ -10,18 +11,26 @@ from src.infrastructure.adapters.input.api_router import router
 
 load_dotenv()
 
-# Obtener token e inyectarlo en la configuración global de DagsHub
-DAGSHUB_TOKEN = os.getenv("MLFLOW_TRACKING_PASSWORD", "08a361eb762d8562daa67d9089d622d1e31bbc7a")
+# Registro (logging) estándar: los mensajes quedan en los logs de Render con fecha y nivel
+logging.basicConfig(level=os.getenv("LOG_LEVEL", "INFO"),
+                    format="%(asctime)s %(levelname)s %(name)s: %(message)s")
+logger = logging.getLogger("main")
 
+# MLflow en DagsHub es opcional para que la API funcione: si no hay token o DagsHub no responde,
+# la API arranca igual y solo se deja de registrar la telemetría en MLflow.
+DAGSHUB_TOKEN = os.getenv("MLFLOW_TRACKING_PASSWORD")
 if DAGSHUB_TOKEN:
-    dagshub.auth.add_app_token(DAGSHUB_TOKEN)
-
-# Inicializar DagsHub MLflow sin parámetros no soportados
-dagshub.init(
-    repo_owner='Marcelo-CC',
-    repo_name='Taller-de-Proyectos-Software',
-    mlflow=True
-)
+    try:
+        dagshub.auth.add_app_token(DAGSHUB_TOKEN)
+        dagshub.init(
+            repo_owner=os.getenv("DAGSHUB_REPO_OWNER", "Marcelo-CC"),
+            repo_name=os.getenv("DAGSHUB_REPO_NAME", "Taller-de-Proyectos-Software"),
+            mlflow=True
+        )
+    except Exception as e:
+        logger.warning("No se pudo conectar con DagsHub/MLflow; la API sigue sin registrar en MLflow: %s", e)
+else:
+    logger.warning("MLFLOW_TRACKING_PASSWORD no está configurada: no se registrará en MLflow/DagsHub.")
 
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")

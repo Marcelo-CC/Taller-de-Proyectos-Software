@@ -16,3 +16,9 @@ dist/
 # Archivos del sistema
 .DS_Store
 Thumbs.db
+# Archivos generados al ejecutar (no se versionan)
+mlflow.db
+mlruns/
+emissions.csv
+.pytest_cache/
+.coverage

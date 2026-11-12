@@ -1,10 +1,26 @@
-from typing import Optional
+import logging
+import uuid
+
 from fastapi import APIRouter, HTTPException, Depends
-from pydantic import BaseModel
 
 from src.application.useCases.registrar_reclamo_use_case import RegistrarReclamoUseCase
 from src.application.useCases.gestionar_reclamos_use_case import GestionarReclamosUseCase
 from src.infrastructure.adapters.output.supabase_reclamo_repository import SupabaseReclamoRepository
+from src.infrastructure.adapters.input.dtos import ReclamoDTO, EstadoDTO
+
+logger = logging.getLogger("api.reclamos")
+
+
+def error_interno(operacion: str, error: Exception) -> HTTPException:
+    """Registra el detalle técnico en el servidor y devuelve al cliente solo un mensaje genérico
+    con un código de incidente para poder rastrearlo en los logs de Render."""
+    incidente = uuid.uuid4().hex[:8].upper()
+    logger.error("Incidente %s en %s: %s", incidente, operacion, error, exc_info=error)
+    return HTTPException(
+        status_code=500,
+        detail=f"No se pudo completar la operación. Intente nuevamente (código de incidente {incidente}).",
+    )
+
 
 router = APIRouter()
 
@@ -18,21 +34,6 @@ def get_use_case(repository: SupabaseReclamoRepository = Depends(get_repository)
 
 def get_gestion_use_case(repository: SupabaseReclamoRepository = Depends(get_repository)) -> GestionarReclamosUseCase:
     return GestionarReclamosUseCase(repository)
-
-
-class ReclamoDTO(BaseModel):
-    titulo: str
-    descripcion: str
-    categoria: Optional[str] = None  # Permite recibir valor nulo/ausente desde React sin arrojar 422
-    ubicacion: Optional[str] = ""
-    # Datos personales: se enmascaran en el backend y nunca se envían a Gemini
-    dni: Optional[str] = ""
-    nombre: Optional[str] = ""
-    direccion: Optional[str] = ""
-    contacto: Optional[str] = ""
-
-class EstadoDTO(BaseModel):
-    estado: str
 
 
 # Módulo A: Portal Ciudadano
@@ -71,7 +72,7 @@ def crear_reclamo(
             }
         }
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error en el servidor: {str(e)}")
+        raise error_interno("registrar reclamo", e)
 
 
 # Módulo B: Portal Operativo Interno (SIGEM)
@@ -80,7 +81,7 @@ def listar_reclamos(use_case: GestionarReclamosUseCase = Depends(get_gestion_use
     try:
         return {"status": "success", "data": use_case.listar()}
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error en el servidor: {str(e)}")
+        raise error_interno("listar reclamos", e)
 
 
 @router.patch("/api/reclamos/{reclamo_id}/estado")
@@ -96,4 +97,4 @@ def cambiar_estado(
     except LookupError as e:
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error en el servidor: {str(e)}")
+        raise error_interno("cambiar estado", e)
