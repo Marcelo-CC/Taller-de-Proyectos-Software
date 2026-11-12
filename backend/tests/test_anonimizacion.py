@@ -23,5 +23,5 @@ def test_anonimizacion_local_de_dni_celular_y_correo():
 
 def test_anonimizacion_local_de_nombre_y_domicilio():
     texto = GeminiAdapter._anonimizar_local("Me llamo Carlos Quispe y vivo en Jr. Lima 450, hay basura.")
-    assert "Carlos" not in texto and "Jr. Lima 450" not in texto
+    assert "Carlos" not in texto and "Lima 450" not in texto
     assert "[CIUDADANO_ANÓNIMO]" in texto and "[DATOS_PROTEGIDOS]" in texto
