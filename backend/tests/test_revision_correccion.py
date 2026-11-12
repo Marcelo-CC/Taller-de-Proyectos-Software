@@ -47,3 +47,28 @@ def test_si_la_ia_anonimiza_un_nombre_se_respeta_aunque_cambie_el_texto():
 
 def test_textos_cortos_no_se_revisan():
     assert GeminiAdapter._revisar_correccion("bache grande", "Bache grande.") == "Bache grande."
+
+
+def test_mi_casa_tapada_completa_se_restaura():
+    # Caso real del ticket N° 01255: la IA reemplazó "mi casa" entero por el marcador
+    original = ("Soy [CIUDADANO_ANÓNIMO] con DNI [DNI_PROTEGIDO], domiciliado en [DATOS_PROTEGIDOS]. "
+                "Ubicación del problema: Jr. Puno cuadra 5. Detalle del problema: "
+                "hace dias nadie recoje la basura en la esquina de mi casa y hay mucho olor")
+    corregido = ("Soy [CIUDADANO_ANÓNIMO] con DNI [DNI_PROTEGIDO], domiciliado en [DATOS_PROTEGIDOS]. "
+                 "Ubicación del problema: Jr. Puno cuadra 5. Detalle del problema: "
+                 "Hace días nadie recoge la basura en la esquina de [DATOS_PROTEGIDOS] y hay mucho olor.")
+    resultado = GeminiAdapter._revisar_correccion(original, corregido)
+    assert "esquina de mi casa y hay mucho olor" in resultado
+    assert "domiciliado en [DATOS_PROTEGIDOS]" in resultado
+
+
+def test_direccion_escrita_se_tapa_sin_borrar_el_resto():
+    # Caso real del ticket N° 01257: antes se perdía "y hay un bache enorme..."
+    texto = GeminiAdapter._anonimizar_local("vivo en Jr. Lima 450 y hay un bache enorme que malogra los carros")
+    assert "Lima 450" not in texto
+    assert texto == "vivo en [DATOS_PROTEGIDOS] y hay un bache enorme que malogra los carros"
+
+
+def test_plantilla_del_formulario_no_cambia():
+    plantilla = "Soy [CIUDADANO_ANÓNIMO] con DNI [DNI_PROTEGIDO], domiciliado en [DATOS_PROTEGIDOS]. Ubicación del problema: x"
+    assert GeminiAdapter._anonimizar_local(plantilla) == plantilla
