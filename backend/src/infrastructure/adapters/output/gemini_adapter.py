@@ -158,12 +158,26 @@ class GeminiAdapter:
 
     @staticmethod
     def _restaurar_genericas(original: str, corregido: str) -> str:
-        """Si el original decía "mi casa" y la IA escribió "mi [DATOS_PROTEGIDOS]", se devuelve "mi casa".
-        Solo se reponen palabras de PALABRAS_GENERICAS, nunca una dirección ni un nombre."""
+        """Si el original decía "mi casa" y la IA lo tapó ("mi [DATOS_PROTEGIDOS]" o "de [DATOS_PROTEGIDOS]"),
+        se devuelve la frase original. Solo se reponen palabras de PALABRAS_GENERICAS, nunca una dirección
+        ni un nombre, y nunca el domicilio del formulario ("domiciliado en [DATOS_PROTEGIDOS]")."""
         genericas = "|".join(PALABRAS_GENERICAS)
-        for m in re.finditer(rf"(?i)\b(mi|mis|su|sus|nuestra|nuestro|nuestras|nuestros)\s+({genericas})\b", original or ""):
-            patron = rf"(?i)\b({m.group(1)})\s+{re.escape(MARCADOR_DATOS)}"
-            corregido = re.sub(patron, lambda r: f"{r.group(1)} {m.group(2)}", corregido, count=1)
+        posesivos = "mi|mis|su|sus|nuestra|nuestro|nuestras|nuestros"
+        marcador = re.escape(MARCADOR_DATOS)
+        for m in re.finditer(rf"(?i)(?:\b(\w+)\s+)?\b({posesivos})\s+({genericas})\b", original or ""):
+            previa, posesivo, generica = m.group(1), m.group(2), m.group(3)
+            if re.search(rf"(?i)\b{posesivo}\s+{generica}\b", corregido):
+                continue  # la IA la dejó intacta
+            # 1) "mi [DATOS_PROTEGIDOS]"  2) "<palabra previa> [DATOS_PROTEGIDOS]", p. ej. "esquina de [...]"
+            patrones = [rf"(?i)\b({posesivo})\s+{marcador}"]
+            if previa:
+                patrones.append(rf"(?i)(?<!domiciliado )(?<!domiciliada )(?<!vivo )\b({re.escape(previa)})\s+{marcador}")
+            for k, patron in enumerate(patrones):
+                nuevo = re.sub(patron, (lambda r: f"{r.group(1)} {generica}") if k == 0
+                               else (lambda r: f"{r.group(1)} {posesivo} {generica}"), corregido, count=1)
+                if nuevo != corregido:
+                    corregido = nuevo
+                    break
         return corregido
 
     @staticmethod
@@ -240,7 +254,7 @@ class GeminiAdapter:
         texto = re.sub(r"(?<!\d)(?:\+?51\s?)?9\d{2}[\s-]?\d{3}[\s-]?\d{3}(?!\d)", "[DATOS_PROTEGIDOS]", texto)
         texto = re.sub(r"(?<!\d)\d{8}(?!\d)", "[DNI_PROTEGIDO]", texto)
         texto = re.sub(rf"(?i:\b(soy|me llamo|mi nombre es)\s+){nombre}", r"\1 [CIUDADANO_ANÓNIMO]", texto)
-        texto = re.sub(r"(?i:\b(domiciliad[oa] en|vivo en|mi casa (?:queda |está |esta )?en)\s+)(?:(?i:\b(?:jr|av|ca|cl|psje|pje|prol|urb|mz|lt|nro|n°|int|dpto|block|sect?))\.\s*|[^.,;\n])+",
+        texto = re.sub(r"(?i:\b(domiciliad[oa] en|vivo en|mi casa (?:queda |está |esta )?en)\s+)(?:(?i:\b(?:jr|av|ca|cl|psje|pje|prol|urb|mz|lt|nro|n°|int|dpto|block|sect?))\.\s*|(?!\s+(?:y|e|pero|que|donde|desde|hace|porque|ya|hay|con|por)\b)[^.,;\n])+",
                        r"\1 [DATOS_PROTEGIDOS]", texto)
         return texto
 
