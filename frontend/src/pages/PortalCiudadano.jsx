@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Encabezado, PiePagina, InsigniaCategoria, TextoAnonimizado } from '../components/Layout';
+import { Encabezado, PiePagina, InsigniaCategoria, TextoAnonimizado, IconoGreenAI } from '../components/Layout';
 import { registrarReclamo } from '../services/api';
 import { formatoTicket } from '../constantes';
 
@@ -231,7 +231,7 @@ export default function PortalCiudadano() {
             </div>
 
             <div className="sello-green">
-              <span aria-hidden="true">🌱</span>
+              <IconoGreenAI tamano={40} className="sello-green-icono" />
               <p>
                 <strong>Sello Green AI:</strong> tu reclamo fue categorizado con un impacto ambiental de{' '}
                 <strong>{ticket.telemetria_green_ai.emisiones_gco2.toFixed(4)} gCO₂e</strong>{' '}

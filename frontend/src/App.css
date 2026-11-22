@@ -351,7 +351,23 @@ legend {
   color: #0c5132;
   margin-bottom: 24px;
 }
-.sello-green span { font-size: 1.4rem; line-height: 1; }
+.sello-green-icono { flex-shrink: 0; }
+
+/* ============ Green AI: sello y logo ============ */
+.icono-green { display: inline-block; vertical-align: -0.2em; margin-right: 4px; }
+.cabecera-green {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  flex-wrap: wrap;
+  background: var(--verde-claro);
+  border: 1px solid #b7e0c8;
+  border-radius: var(--radio);
+  padding: 14px 18px;
+  margin-bottom: 18px;
+}
+.cabecera-green img { flex-shrink: 0; }
+.cabecera-green p { flex: 1; min-width: 220px; color: #0c5132; font-size: 0.92rem; }
 
 .acciones-ticket { display: flex; gap: 12px; justify-content: flex-end; flex-wrap: wrap; }
 

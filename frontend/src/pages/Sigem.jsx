@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Encabezado, PiePagina } from '../components/Layout';
+import { Encabezado, PiePagina, IconoGreenAI } from '../components/Layout';
 import { listarReclamos, cambiarEstado, auditarReclamo } from '../services/api';
 import { ESTADOS, ESTADO_AUDITORIA, estadoVisible, formatoTicket } from '../constantes';
 import TablaReclamos from './sigem/TablaReclamos';
@@ -9,7 +9,7 @@ import DashboardGreenAI from './sigem/DashboardGreenAI';
 const SECCIONES = [
   { id: 'gestion', titulo: 'Panel de Control', icono: '📋' },
   { id: 'busqueda', titulo: 'Búsqueda y Filtrado', icono: '🔍' },
-  { id: 'dashboard', titulo: 'Dashboard Green AI', icono: '🌱' },
+  { id: 'dashboard', titulo: 'Dashboard Green AI', icono: <IconoGreenAI tamano={20} /> },
 ];
 
 export default function Sigem({ sesion, onSalir }) {
