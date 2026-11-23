@@ -1,4 +1,4 @@
-import { Encabezado, PiePagina } from '../components/Layout';
+import { Encabezado, PiePagina, IconoGreenAI } from '../components/Layout';
 
 export default function Inicio() {
   return (
@@ -56,7 +56,7 @@ export default function Inicio() {
       <section className="contenedor franja-beneficios">
         <div><strong>🔒 Datos protegidos</strong><span>Su DNI, nombre y domicilio se anonimizan antes de guardarse.</span></div>
         <div><strong>⚡ Clasificación automática</strong><span>La IA asigna la categoría y deriva el reclamo al área correcta.</span></div>
-        <div><strong>🌱 Green AI</strong><span>Cada inferencia mide su consumo energético y emisiones de CO₂.</span></div>
+        <div><strong><IconoGreenAI tamano={20} /> Green AI</strong><span>Cada inferencia mide su consumo energético y emisiones de CO₂.</span></div>
       </section>
 
       <p className="contenedor enlace-guia">

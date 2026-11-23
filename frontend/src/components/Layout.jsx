@@ -9,6 +9,12 @@ export function Escudo({ tamano = 44 }) {
   );
 }
 
+// Sello Green AI (public/green-ai-icono.svg): marca las partes del sistema que miden su huella de carbono.
+// Es decorativo: el texto de al lado ya dice "Green AI", por eso alt vacío.
+export function IconoGreenAI({ tamano = 20, className = 'icono-green' }) {
+  return <img src="/green-ai-icono.svg" alt="" aria-hidden="true" width={tamano} height={tamano} className={className} />;
+}
+
 export function Encabezado({ subtitulo, children }) {
   return (
     <header className="encabezado">
@@ -39,7 +45,9 @@ export function PiePagina() {
       </div>
       <div className="pie-legal">
         Datos personales tratados conforme a la Ley N° 29733, Ley de Protección de Datos Personales.
-        <span className="sello-verde">🌱 Plataforma Green AI con medición de huella de carbono</span>
+        <span className="sello-verde">
+          <IconoGreenAI tamano={18} /> Plataforma Green AI con medición de huella de carbono
+        </span>
       </div>
     </footer>
   );

@@ -55,6 +55,14 @@ export default function DashboardGreenAI({ reclamos }) {
 
   return (
     <section className="dashboard">
+      <div className="cabecera-green">
+        <img src="/green-ai-logo.svg" alt="Green AI Municipal" width={156} height={52} />
+        <p>
+          Cada clasificación de la IA mide su consumo de energía y sus emisiones de CO₂ con CodeCarbon.
+          Este panel resume la huella ambiental de la plataforma.
+        </p>
+      </div>
+
       <div className="exportar-reporte">
         <div>
           <strong>Reporte de sostenibilidad</strong>
